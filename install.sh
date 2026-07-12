@@ -58,7 +58,7 @@ echo ""
 echo -e "  ${DIM}Unauthorized scanning is illegal. See RESPONSIBLE_USE.md${RESET}"
 echo ""
 
-read -r -p "  Do you accept these terms? [y/N]: " terms_accepted
+read -r -p "  Do you accept these terms? [y/N]: " terms_accepted < /dev/tty
 if [[ ! "$terms_accepted" =~ ^[Yy]$ ]]; then
   echo "  Installation cancelled."
   exit 0
@@ -165,7 +165,7 @@ echo -e "  ${DIM}Docs:   https://github.com/${REPO}/wiki${RESET}"
 echo -e "  ${DIM}Issues: https://github.com/${REPO}/issues${RESET}"
 echo ""
 
-read -r -p "  Run setup wizard now? [Y/n]: " run_setup
+read -r -p "  Run setup wizard now? [Y/n]: " run_setup < /dev/tty
 if [[ ! "$run_setup" =~ ^[Nn]$ ]]; then
   echo ""
   leafscan setup
