@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "leafscan"
+version = "2.0.0"
+description = "World's First Continuous Bug Bounty Scanner — by Leaf Security AI, JJ Groups of Company"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "A.P.Jovin", email = "apjovin@leafsecurity.ai" }
+]
+keywords = ["security", "bug-bounty", "vulnerability", "scanner", "pentesting", "cybersecurity"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Environment :: Console",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "rich>=13.0.0",
+    "requests>=2.31.0",
+    "click>=8.1.0",
+    "toml>=0.10.2",
+    "dnspython>=2.4.0",
+    "colorama>=0.4.6",
+    "pyfiglet>=1.0.2",
+    "urllib3>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "black>=23.0", "ruff>=0.1.0"]
+
+[project.urls]
+Homepage = "https://leafsecurity.ai"
+Repository = "https://github.com/LeafSecurityAI/leafscan"
+"Bug Tracker" = "https://github.com/LeafSecurityAI/leafscan/issues"
+Documentation = "https://github.com/LeafSecurityAI/leafscan/wiki"
+
+[project.scripts]
+leafscan = "leafscan.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["leafscan*"]
