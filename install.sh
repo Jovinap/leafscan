@@ -176,5 +176,5 @@ echo ""
 read -r -p "  Run setup wizard now? [Y/n]: " run_setup < /dev/tty
 if [[ ! "$run_setup" =~ ^[Nn]$ ]]; then
   echo ""
-  leafscan setup
+  leafscan setup < /dev/tty
 fi
