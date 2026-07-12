@@ -132,7 +132,7 @@ class ScanEngine:
         with self._lock:
             self.findings.append(finding)
 
-    def run(self, live_callback=None) -> list:
+    def run(self, live_callback=None, module_callback=None) -> list:
         """Execute all requested scan modules and return findings."""
         module_map = _load_modules()
         from leafscan.ui.tui import print_module_result
@@ -149,6 +149,8 @@ class ScanEngine:
                     self.add_finding(f)
                     if live_callback:
                         live_callback(f)
+                if module_callback:
+                    module_callback(mod_name, len(results))
                 print_module_result(mod_name, icon, len(results), elapsed)
             except Exception as e:
                 elapsed = time.time() - t0
@@ -170,7 +172,7 @@ def summarize(findings: list) -> dict:
     return out
 
 
-def run_scan(target, config, modules=None, authorized=False, verbose=False, live_callback=None):
+def run_scan(target, config, modules=None, authorized=False, verbose=False, live_callback=None, module_callback=None):
     """
     Top-level entry point for a scan run.
     Returns (findings, scan_duration_seconds).
@@ -189,7 +191,7 @@ def run_scan(target, config, modules=None, authorized=False, verbose=False, live
 
     engine = ScanEngine(target, config, modules=active_modules, verbose=verbose)
     t0 = time.time()
-    findings = engine.run(live_callback=live_callback)
+    findings = engine.run(live_callback=live_callback, module_callback=module_callback)
     elapsed  = time.time() - t0
 
     print_summary(findings, elapsed)

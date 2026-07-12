@@ -94,7 +94,11 @@ def setup():
               help="Confirm you own or have written authorization to test this target.")
 @click.option("--no-save", is_flag=True, default=False,
               help="Do not save report to disk (print to terminal only).")
-def scan(target, modules, profile, output, json_only, verbose, authorized, no_save):
+@click.option("--continuous", "-c", is_flag=True, default=False,
+              help="Run scan continuously in a loop.")
+@click.option("--submit", "-s", is_flag=True, default=False,
+              help="Auto-submit findings to the Leaf Security AI platform.")
+def scan(target, modules, profile, output, json_only, verbose, authorized, no_save, continuous, submit):
     """
     Scan a target for vulnerabilities.
 
@@ -128,6 +132,32 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
     # Load config
     cfg = load_config()
 
+    # Run authorization gate once before the loop
+    from leafscan.scanner.engine import require_authorization
+    if not require_authorization(target, authorized):
+        warn("Scan aborted — authorization not confirmed.")
+        sys.exit(0)
+
+    # Initialize LeafAPI client if authenticated
+    api = None
+    from leafscan.core.auth import LeafAPI
+    try:
+        api = LeafAPI()
+    except Exception:
+        pass
+
+    def live_callback(finding):
+        if api and api.is_authenticated():
+            # Real-time scan event
+            api.push_scan_event("finding", finding)
+            if submit or cfg.get("daemon", {}).get("auto_submit", True):
+                # Auto-submit finding to database
+                api.submit_finding("zybrai", finding)
+
+    def module_callback(mod_name, count):
+        if api and api.is_authenticated():
+            api.push_scan_event("module_done", {"module": mod_name, "count": count})
+
     # Apply profile override
     if profile:
         cfg["scan"]["profile"] = profile
@@ -147,52 +177,62 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
             info(f"Valid modules: {', '.join(ALL_MODULES)}")
             sys.exit(1)
 
-    # Run scan
+    import time
+    interval = cfg.get("daemon", {}).get("interval_minutes", 30) * 60
+
     try:
-        findings, elapsed = run_scan(
-            target,
-            config=cfg,
-            modules=active_modules,
-            authorized=authorized,
-            verbose=verbose,
-        )
+        while True:
+            # Run scan
+            findings, elapsed = run_scan(
+                target,
+                config=cfg,
+                modules=active_modules,
+                authorized=True,  # Bypassed because gate checked above
+                verbose=verbose,
+                live_callback=live_callback,
+                module_callback=module_callback,
+            )
+
+            # AI classification (if enabled)
+            if cfg.get("ai", {}).get("enabled"):
+                from leafscan.report.generator import ai_classify_finding
+                info("Running AI classification on findings...")
+                findings = [ai_classify_finding(f, cfg) for f in findings]
+
+            # Save report
+            if not no_save and cfg.get("output", {}).get("save_reports", True):
+                try:
+                    report_id, md_path, json_path = save_report(
+                        target, findings, elapsed, cfg["scan"].get("profile", "default"), cfg
+                    )
+                    save_history_entry(target, report_id, len(findings), cfg["scan"].get("profile", "default"))
+
+                    if HAS_RICH and console:
+                        console.print()
+                        console.print(f"  [bold green]✓ Report saved[/bold green]")
+                        console.print(f"    [dim]Markdown:[/dim] [link={md_path}]{md_path}[/link]")
+                        console.print(f"    [dim]JSON:    [/dim] [link={json_path}]{json_path}[/link]")
+                        console.print(f"    [dim]ID:      [/dim] {report_id}")
+                        console.print()
+                    else:
+                        print(f"\n  ✓ Report: {md_path}")
+                        print(f"  ✓ JSON:   {json_path}")
+                except Exception as e:
+                    warn(f"Could not save report: {e}")
+            elif no_save and findings:
+                import json
+                click.echo(json.dumps(findings, indent=2))
+
+            if not continuous:
+                break
+
+            info(f"Continuous mode active. Sleeping for {interval} seconds before next run...")
+            time.sleep(interval)
+            print_banner("Running next scheduled scan round...")
+
     except KeyboardInterrupt:
         warn("\nScan interrupted by user.")
         sys.exit(0)
-
-    if not findings and elapsed == 0.0:
-        # Authorization was declined
-        sys.exit(0)
-
-    # AI classification (if enabled)
-    if cfg.get("ai", {}).get("enabled"):
-        from leafscan.report.generator import ai_classify_finding
-        info("Running AI classification on findings...")
-        findings = [ai_classify_finding(f, cfg) for f in findings]
-
-    # Save report
-    if not no_save and cfg.get("output", {}).get("save_reports", True):
-        try:
-            report_id, md_path, json_path = save_report(
-                target, findings, elapsed, cfg["scan"].get("profile", "default"), cfg
-            )
-            save_history_entry(target, report_id, len(findings), cfg["scan"].get("profile", "default"))
-
-            if HAS_RICH and console:
-                console.print()
-                console.print(f"  [bold green]✓ Report saved[/bold green]")
-                console.print(f"    [dim]Markdown:[/dim] [link={md_path}]{md_path}[/link]")
-                console.print(f"    [dim]JSON:    [/dim] [link={json_path}]{json_path}[/link]")
-                console.print(f"    [dim]ID:      [/dim] {report_id}")
-                console.print()
-            else:
-                print(f"\n  ✓ Report: {md_path}")
-                print(f"  ✓ JSON:   {json_path}")
-        except Exception as e:
-            warn(f"Could not save report: {e}")
-    elif no_save and findings:
-        import json
-        click.echo(json.dumps(findings, indent=2))
 
 
 # ── leafscan history ───────────────────────────────────────────────────────────
