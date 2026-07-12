@@ -120,14 +120,22 @@ else
   UPGRADE_FLAG=""
 fi
 
+# ── PIP FLAGS DETECTION (PEP 668) ──────────────────────────────────────────
+PIP_FLAGS=""
+if $PIP install --help 2>/dev/null | grep -q "break-system-packages"; then
+  info "Externally managed environment detected. Enabling system packages bypass."
+  PIP_FLAGS="--break-system-packages"
+fi
+
 # ── INSTALL ────────────────────────────────────────────────────────────────
 step "Installing LeafScan"
 
-info "Running: pip install ${UPGRADE_FLAG} leafscan"
-if ! $PIP install $UPGRADE_FLAG leafscan 2>&1; then
+info "Running: pip install ${UPGRADE_FLAG} ${PIP_FLAGS} leafscan"
+if ! $PIP install $UPGRADE_FLAG $PIP_FLAGS leafscan 2>&1; then
   warn "PyPI install failed — trying install from GitHub..."
-  $PIP install $UPGRADE_FLAG "git+https://github.com/${REPO}.git" || \
-    error "Installation failed. Check your internet connection and try: pip install leafscan"
+  if ! $PIP install $UPGRADE_FLAG $PIP_FLAGS "git+https://github.com/${REPO}.git" 2>&1; then
+    error "Installation failed. Check your internet connection and try: pip install leafscan --break-system-packages"
+  fi
 fi
 
 # ── VERIFY ─────────────────────────────────────────────────────────────────
