@@ -16,6 +16,15 @@ def run_setup():
     )
     from leafscan.core.auth import LeafAPI
 
+    # Non-interactive check (use defaults if no tty)
+    is_interactive = sys.stdin.isatty()
+    if not is_interactive:
+        warn("Non-interactive terminal detected. Auto-applying defaults.")
+        def prompt(question, default=None, password=False):
+            return default
+        def confirm(question, default=True):
+            return default
+
     print_banner("Setup Wizard — Let's get you configured!")
 
     if HAS_RICH and console:
