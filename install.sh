@@ -4,12 +4,12 @@
 # By Leaf Security AI (JJ Groups of Company) | Created by A.P.Jovin
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/LeafSecurityAI/leafscan/main/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/Jovinap/leafscan/main/install.sh | bash
 #
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
 
-REPO="LeafSecurityAI/leafscan"
+REPO="Jovinap/leafscan"
 MIN_PYTHON="3.8"
 PACKAGE="leafscan"
 

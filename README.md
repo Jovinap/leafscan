@@ -18,7 +18,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/leafscan?color=green&label=leafscan)](https://pypi.org/project/leafscan/)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/LeafSecurityAI/leafscan)
+[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/Jovinap/leafscan)
 
 </div>
 
@@ -33,7 +33,7 @@
 ### One-line installer (recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/LeafSecurityAI/leafscan/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Jovinap/leafscan/main/install.sh | bash
 ```
 
 ### pip install
@@ -45,7 +45,7 @@ pip install leafscan
 ### From source
 
 ```bash
-git clone https://github.com/LeafSecurityAI/leafscan.git
+git clone https://github.com/Jovinap/leafscan.git
 cd leafscan
 pip install -e .
 ```
@@ -383,7 +383,7 @@ Copyright (c) 2024 A.P.Jovin, Leaf Security AI, JJ Groups of Company
 
 - 🌐 Website: [leafsecurity.ai](https://leafsecurity.ai)  
 - 📧 Email: [apjovin@leafsecurity.ai](mailto:apjovin@leafsecurity.ai)  
-- 🐛 Issues: [GitHub Issues](https://github.com/LeafSecurityAI/leafscan/issues)  
+- 🐛 Issues: [GitHub Issues](https://github.com/Jovinap/leafscan/issues)  
 - 💬 Discord: [Leaf Security Community](https://discord.gg/leafsecurity)
 
 ---

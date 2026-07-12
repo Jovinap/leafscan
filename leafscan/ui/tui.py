@@ -52,7 +52,7 @@ def print_banner(subtitle=None):
     else:
         print(ASCII_LOGO)
         print("  World's First Continuous Bug Bounty Scanner")
-        print("  https://github.com/LeafSecurityAI/leafscan\n")
+        print("  https://github.com/Jovinap/leafscan\n")
 
 def print_divider(title=""):
     if HAS_RICH:

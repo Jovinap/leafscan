@@ -9,7 +9,7 @@ class LeafAPI:
         self.token   = get_token()
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "LeafScan/2.0 (https://github.com/LeafSecurityAI/leafscan)",
+            "User-Agent": "LeafScan/2.0 (https://github.com/Jovinap/leafscan)",
             "Accept":     "application/json",
         })
         if self.token:

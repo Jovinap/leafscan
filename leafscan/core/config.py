@@ -22,7 +22,7 @@ DEFAULT_CONFIG = {
         "threads":       10,
         "timeout":       12,
         "delay":         0.3,
-        "user_agent":    "LeafScan/2.0 (Security Scanner; https://github.com/LeafSecurityAI/leafscan)",
+        "user_agent":    "LeafScan/2.0 (Security Scanner; https://github.com/Jovinap/leafscan)",
         "follow_redirects": True,
         "max_depth":     3,
         "profile":       "default",   # default | stealth | aggressive
@@ -90,7 +90,7 @@ def save_config(cfg):
         toml.dump(cfg, f)
 
 def is_first_run():
-    return not CONFIG_FILE.exists() or not load_config().get("platform", {}).get("token")
+    return not CONFIG_FILE.exists()
 
 def get_token():
     return load_config().get("platform", {}).get("token", "")

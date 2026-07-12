@@ -44,9 +44,9 @@ dev = ["pytest>=7.0", "black>=23.0", "ruff>=0.1.0"]
 
 [project.urls]
 Homepage = "https://leafsecurity.ai"
-Repository = "https://github.com/LeafSecurityAI/leafscan"
-"Bug Tracker" = "https://github.com/LeafSecurityAI/leafscan/issues"
-Documentation = "https://github.com/LeafSecurityAI/leafscan/wiki"
+Repository = "https://github.com/Jovinap/leafscan"
+"Bug Tracker" = "https://github.com/Jovinap/leafscan/issues"
+Documentation = "https://github.com/Jovinap/leafscan/wiki"
 
 [project.scripts]
 leafscan = "leafscan.cli:main"

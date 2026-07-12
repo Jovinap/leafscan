@@ -525,7 +525,7 @@ def help_cmd():
   [dim]• Only scan systems you own or have explicit written permission to test[/dim]
   [dim]• Unauthorized scanning is illegal under CFAA, Computer Misuse Act, etc.[/dim]
   [dim]• Reports are for authorized compliance, bug bounty, or internal use only[/dim]
-  [dim]• See: https://github.com/LeafSecurityAI/leafscan/blob/main/RESPONSIBLE_USE.md[/dim]
+  [dim]• See: https://github.com/Jovinap/leafscan/blob/main/RESPONSIBLE_USE.md[/dim]
 """)
     else:
         print("\n  Run 'leafscan --help' for command reference.\n")

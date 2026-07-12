@@ -21,7 +21,7 @@ def run_setup():
     if HAS_RICH and console:
         console.print("  Welcome to [bold green]LeafScan v2.0[/bold green] — World's First Continuous Bug Bounty Scanner\n")
         console.print("  [dim]Built by A.P.Jovin · Leaf Security AI · JJ Groups of Company[/dim]")
-        console.print("  [dim]MIT Licensed Open Source · https://github.com/LeafSecurityAI/leafscan[/dim]\n")
+        console.print("  [dim]MIT Licensed Open Source · https://github.com/Jovinap/leafscan[/dim]\n")
 
     # System info
     print_divider("System Information")
@@ -173,8 +173,8 @@ def run_setup():
   [green]leafscan report list[/green]                          View saved reports
   [green]leafscan help[/green]                                  Full command reference
 
-  [dim]Docs:   https://github.com/LeafSecurityAI/leafscan/wiki[/dim]
-  [dim]Issues: https://github.com/LeafSecurityAI/leafscan/issues[/dim]
+  [dim]Docs:   https://github.com/Jovinap/leafscan/wiki[/dim]
+  [dim]Issues: https://github.com/Jovinap/leafscan/issues[/dim]
 """)
     else:
         print("\n✅ Setup complete! Run: leafscan help\n")
