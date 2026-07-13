@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "leafscan"
-version = "2.0.0"
+version = "2.0.4"
 description = "World's First Continuous Bug Bounty Scanner — by Leaf Security AI, JJ Groups of Company"
 readme = "README.md"
 license = { text = "MIT" }
