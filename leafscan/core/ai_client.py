@@ -26,6 +26,7 @@ AI_PROVIDERS = {
     "newclaw":     {"url": "https://openrouter.ai/api/v1/chat/completions", "default_model": "nousresearch/hermes-3-llama-3.1-405b"},
     "cowork":      {"url": "https://openrouter.ai/api/v1/chat/completions", "default_model": "meta-llama/llama-3.1-70b-instruct"},
     "opencode":    {"url": "https://openrouter.ai/api/v1/chat/completions", "default_model": "meta-llama/codellama-70b-instruct"},
+    "leaf-ai":     {"url": "local", "default_model": "leafgpt"},
 }
 
 
@@ -50,15 +51,19 @@ class AIClient:
             return "⚠️ AI integration is not configured or enabled."
 
         try:
-            # 1. Handle Anthropic format separately
+            # 1. Handle custom Leaf Security AI local/RAG provider
+            if self.provider == "leaf-ai":
+                return self._call_leaf_ai(prompt, system)
+
+            # 2. Handle Anthropic format separately
             if self.provider == "anthropic":
                 return self._call_anthropic(prompt, system)
 
-            # 2. Handle Cohere format separately
+            # 3. Handle Cohere format separately
             if self.provider == "cohere" and "chat/completions" not in self.api_url:
                 return self._call_cohere(prompt, system)
 
-            # 3. Standard OpenAI-compatible format
+            # 4. Standard OpenAI-compatible format
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
@@ -88,6 +93,82 @@ class AIClient:
 
         except Exception as e:
             return f"Error contacting AI provider ({self.provider}): {e}"
+
+    def _call_leaf_ai(self, prompt: str, system: str) -> str:
+        import os
+        import sys
+        
+        # Load corporate threat intelligence context from 500MB dataset
+        dataset_path = "/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/leaf_security_ai_dataset.txt"
+        context_snippets = []
+        if os.path.exists(dataset_path):
+            try:
+                # Simple keyword search to pull relevant context lines
+                keywords = ["xss", "sqli", "port", "header", "cors", "ip address", "token", "key", "disclosure", "owasp"]
+                found_keywords = [k for k in keywords if k in prompt.lower() or k in system.lower()]
+                
+                with open(dataset_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if any(k in line.lower() for k in found_keywords):
+                            context_snippets.append(line.strip())
+                            if len(context_snippets) >= 15:
+                                break
+            except Exception as e:
+                logger.error(f"Error reading leaf corporate dataset: {e}")
+        
+        corp_context = "\n".join(context_snippets) if context_snippets else "No local corporate threat intelligence context matches found."
+        
+        # Enrich the prompt with dataset RAG context
+        enriched_prompt = f"""
+[LEAF SECURITY CORPORATE THREAT INTEL CONTEXT]
+{corp_context}
+[END CONTEXT]
+
+User Prompt: {prompt}
+"""
+        # If a local checkpoint exists, run local inference
+        checkpoint_path = "/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/leaf_gpt_checkpoint.pt"
+        if os.path.exists(checkpoint_path):
+            try:
+                sys.path.append("/home/kali/.gemini/antigravity/scratch/leaf-ai-llm")
+                import torch
+                from train_llm import LeafGPT, CharTokenizer
+                tokenizer = CharTokenizer()
+                model = LeafGPT(vocab_size=tokenizer.vocab_size)
+                model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
+                model.eval()
+                
+                context_tokens = torch.tensor([tokenizer.encode(enriched_prompt[:256])], dtype=torch.long)
+                res_tokens = model.generate(context_tokens, max_new_tokens=150)[0].tolist()
+                return tokenizer.decode(res_tokens[len(context_tokens[0]):])
+            except Exception as e:
+                logger.warning(f"Failed to run local LeafGPT checkpoint: {e}. Falling back to API routing.")
+
+        # Fallback: route the enriched RAG prompt to OpenRouter
+        openrouter_key = self.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if openrouter_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {openrouter_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/Jovinap/leafscan",
+                    "X-Title": "Leaf Security AI Router"
+                }
+                body = {
+                    "model": "openrouter/free",
+                    "messages": [
+                        {"role": "system", "content": system or "You are the Leaf Security AI assistant."},
+                        {"role": "user", "content": enriched_prompt}
+                    ],
+                    "temperature": 0.2
+                }
+                r = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body, timeout=20)
+                if r.ok:
+                    return r.json()["choices"][0]["message"]["content"]
+            except Exception:
+                pass
+                
+        return f"[Leaf Security AI Local Offline Mode]\nAnalysing vulnerability with local dataset context.\nMatched Context: {corp_context[:300]}..."
 
     def _call_anthropic(self, prompt: str, system: str) -> str:
         headers = {

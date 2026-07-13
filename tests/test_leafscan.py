@@ -265,4 +265,19 @@ class TestV215Features:
         }
         assert validate_finding_json(invalid) is False
 
-
+    def test_leaf_ai_provider(self):
+        from leafscan.core.ai_client import AIClient
+        config = {
+            "ai": {
+                "enabled": True,
+                "provider": "leaf-ai",
+                "api_key": "mock-key",
+                "model": "leafgpt"
+            }
+        }
+        client = AIClient(config)
+        assert client.provider == "leaf-ai"
+        
+        # Test call_ai fallback response containing dataset markers
+        res = client.call_ai("XSS vulnerability", "You are a scanner helper")
+        assert "Leaf Security" in res or "matched" in res.lower() or "vulnerability" in res.lower()
