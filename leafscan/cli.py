@@ -823,5 +823,41 @@ def _load_findings_helper(report_name_or_id):
         return None, f"Failed to load JSON findings: {e}"
 
 
+# ── leafscan ask ──────────────────────────────────────────────────────────────
+@main.command("ask")
+@click.argument("question")
+def ask(question):
+    """
+    Ask a question to the configured Leaf Security AI Client.
+    
+    This command will utilize the active provider (e.g., leaf-ai with corporate RAG or OpenRouter).
+    """
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error
+    from leafscan.core.config import load_config
+    from leafscan.core.ai_client import AIClient
+
+    print_banner("Leaf Security AI Assistant")
+    
+    cfg = load_config()
+    # Temporarily enable AI if not configured so the user can test easily
+    if not cfg.get("ai", {}).get("enabled"):
+        cfg["ai"] = cfg.get("ai", {})
+        cfg["ai"]["enabled"] = True
+        if not cfg["ai"].get("provider"):
+            cfg["ai"]["provider"] = "leaf-ai"
+
+    info("Querying AI Client...")
+    client = AIClient(cfg)
+    response = client.call_ai(question, "You are a professional security assistant.")
+    
+    if HAS_RICH and console:
+        from rich.markdown import Markdown
+        console.print("\n[bold green]AI Response:[/bold green]")
+        console.print(Markdown(response))
+    else:
+        print("\nAI Response:")
+        print(response)
+
+
 if __name__ == "__main__":
     main()

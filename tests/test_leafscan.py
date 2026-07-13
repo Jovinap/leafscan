@@ -281,3 +281,12 @@ class TestV215Features:
         # Test call_ai fallback response containing dataset markers
         res = client.call_ai("XSS vulnerability", "You are a scanner helper")
         assert "Leaf Security" in res or "matched" in res.lower() or "vulnerability" in res.lower()
+
+    def test_ask_command(self):
+        from click.testing import CliRunner
+        from leafscan.cli import ask
+        runner = CliRunner()
+        result = runner.invoke(ask, ["What is XSS?"])
+        assert result.exit_code == 0
+        assert "AI Response" in result.output
+
