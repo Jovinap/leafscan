@@ -73,7 +73,19 @@ def run_setup():
             ("openrouter",   "OpenRouter (openrouter.ai) — Recommended"),
             ("openai",       "OpenAI (api.openai.com)"),
             ("anthropic",    "Anthropic (api.anthropic.com)"),
+            ("google",       "Google Gemini (generativelanguage.googleapis.com)"),
+            ("groq",         "Groq (api.groq.com)"),
+            ("mistral",      "Mistral AI (api.mistral.ai)"),
+            ("together",     "Together AI (api.together.xyz)"),
+            ("cohere",       "Cohere (api.cohere.com)"),
+            ("deepseek",     "DeepSeek (api.deepseek.com)"),
+            ("perplexity",   "Perplexity (api.perplexity.ai)"),
             ("ollama",       "Ollama (localhost — fully local/free)"),
+            ("openclaw",     "OpenClaw Proxy"),
+            ("hermes",       "Hermes 3 (Nous Research)"),
+            ("newclaw",      "NewClaw Inference"),
+            ("cowork",       "CoWork Collaborative AI"),
+            ("opencode",     "OpenCode Code Assistant"),
             ("custom",       "Custom endpoint"),
         ]
         if HAS_RICH and console:
@@ -86,39 +98,36 @@ def run_setup():
                 t.add_row(str(i), v)
             console.print(t)
 
-        choice = prompt("Select AI provider [1-5]", default="1")
+        choice = prompt(f"Select AI provider [1-{len(ai_providers)}]", default="1")
         try:
             idx = int(choice) - 1
             provider_key, _ = ai_providers[idx]
         except Exception:
             provider_key = "openrouter"
 
+        # Import AI provider configurations
+        from leafscan.core.ai_client import AI_PROVIDERS
+        p_info = AI_PROVIDERS.get(provider_key, {"url": "", "default_model": "gpt-4o-mini"})
+
         if provider_key == "ollama":
-            api_url_ai = "http://localhost:11434/v1"
+            api_url_ai = prompt("Ollama API URL", default=p_info["url"])
             ai_key = "ollama"
-            ai_model = prompt("Ollama model name", default="llama3.2")
-        elif provider_key == "openai":
-            api_url_ai = "https://api.openai.com/v1"
-            ai_key = prompt("OpenAI API key", default="", password=True)
-            ai_model = prompt("Model", default="gpt-4o-mini")
-        elif provider_key == "anthropic":
-            api_url_ai = "https://api.anthropic.com"
-            ai_key = prompt("Anthropic API key", default="", password=True)
-            ai_model = prompt("Model", default="claude-3-haiku-20240307")
+            ai_model = prompt("Ollama model name", default=p_info["default_model"])
         elif provider_key == "custom":
             api_url_ai = prompt("Custom API URL")
             ai_key = prompt("API key", default="", password=True)
             ai_model = prompt("Model name", default="gpt-4o-mini")
-        else:  # openrouter
-            api_url_ai = "https://openrouter.ai/api/v1"
-            ai_key = prompt("OpenRouter API key (from openrouter.ai/keys)", default="", password=True)
-            ai_model = prompt("Model", default="openai/gpt-4o-mini")
+        else:
+            api_url_ai = prompt(f"{provider_key.capitalize()} API URL", default=p_info["url"])
+            ai_key = prompt(f"{provider_key.capitalize()} API key", default="", password=True)
+            ai_model = prompt("Model", default=p_info["default_model"])
 
         cfg["ai"]["enabled"]  = True
+        cfg["ai"]["provider"] = provider_key
         cfg["ai"]["api_url"]  = api_url_ai
         cfg["ai"]["api_key"]  = ai_key
         cfg["ai"]["model"]    = ai_model
-        success(f"AI configured: {ai_model}")
+        success(f"AI configured: {provider_key} ({ai_model})")
     else:
         cfg["ai"]["enabled"] = False
         info("AI integration skipped — you can enable it later with: leafscan config set ai.enabled true")

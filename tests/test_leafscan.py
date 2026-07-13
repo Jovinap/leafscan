@@ -180,3 +180,36 @@ class TestModules:
         }
         for key in required_keys:
             assert key in mock_finding
+
+
+class TestV2Upgrades:
+    def test_ai_providers_list(self):
+        from leafscan.core.ai_client import AI_PROVIDERS
+        assert "openrouter" in AI_PROVIDERS
+        assert "openai" in AI_PROVIDERS
+        assert "anthropic" in AI_PROVIDERS
+        assert "ollama" in AI_PROVIDERS
+        assert "google" in AI_PROVIDERS
+        assert "groq" in AI_PROVIDERS
+        assert "mistral" in AI_PROVIDERS
+
+    def test_ai_client_disabled_by_default(self):
+        from leafscan.core.config import DEFAULT_CONFIG
+        from leafscan.core.ai_client import AIClient
+        client = AIClient(DEFAULT_CONFIG)
+        assert client.enabled is False
+        res = client.call_ai("hello")
+        assert "not configured" in res or "disabled" in res
+
+    def test_exploit_chain_simulator_disabled(self):
+        from leafscan.core.config import DEFAULT_CONFIG
+        from leafscan.core.chain_simulator import simulate_exploit_chain
+        res = simulate_exploit_chain([{"title": "Test XSS", "severity": "high"}], "localhost", DEFAULT_CONFIG)
+        assert "disabled" in res or "⚠️" in res
+
+    def test_patch_generator_disabled(self):
+        from leafscan.core.config import DEFAULT_CONFIG
+        from leafscan.core.patch_generator import generate_git_patch
+        res = generate_git_patch({"title": "Test XSS", "url": "http://localhost/index.php"}, ".", DEFAULT_CONFIG)
+        assert "disabled" in res or "⚠️" in res
+

@@ -173,8 +173,8 @@ def ai_classify_finding(finding, config):
         return finding
 
     try:
-        import requests as req
-        ai_cfg = config["ai"]
+        from leafscan.core.ai_client import AIClient
+        ai = AIClient(config)
         prompt = f"""You are a senior bug bounty security researcher. 
 Analyze this vulnerability finding and respond with a JSON object:
 {{
@@ -190,19 +190,15 @@ Type: {finding.get('vuln_type')}
 URL: {finding.get('url')}
 Evidence: {finding.get('evidence','')}
 """
-        headers = {"Authorization": f"Bearer {ai_cfg['api_key']}", "Content-Type": "application/json"}
-        body    = {"model": ai_cfg["model"], "messages": [{"role": "user", "content": prompt}], "max_tokens": 500}
-        r = req.post(f"{ai_cfg['api_url']}/chat/completions", headers=headers, json=body, timeout=15)
-        if r.ok:
-            content = r.json()["choices"][0]["message"]["content"]
-            import re
-            json_match = re.search(r'\{.*\}', content, re.DOTALL)
-            if json_match:
-                ai_data = json.loads(json_match.group())
-                finding["ai_severity"]       = ai_data.get("severity", finding["severity"])
-                finding["ai_cvss"]           = ai_data.get("cvss_score", CVSS_BASE.get(finding["severity"],0))
-                finding["ai_writeup"]        = ai_data.get("write_up_template", "")
-                finding["ai_recommendations"]= ai_data.get("recommendations", "")
+        content = ai.call_ai(prompt, "You are a professional security advisor.")
+        import re
+        json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        if json_match:
+            ai_data = json.loads(json_match.group())
+            finding["ai_severity"]       = ai_data.get("severity", finding.get("severity", "info"))
+            finding["ai_cvss"]           = ai_data.get("cvss_score", CVSS_BASE.get(finding.get("severity", "info"), 0))
+            finding["ai_writeup"]        = ai_data.get("write_up_template", "")
+            finding["ai_recommendations"]= ai_data.get("recommendations", "")
     except Exception:
         pass
     return finding

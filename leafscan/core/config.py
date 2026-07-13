@@ -41,6 +41,7 @@ DEFAULT_CONFIG = {
     },
     "ai": {
         "enabled":    False,
+        "provider":   "openrouter",
         "api_key":    "",
         "model":      "openai/gpt-4o-mini",
         "api_url":    "https://openrouter.ai/api/v1",

@@ -571,5 +571,134 @@ def help_cmd():
         print("\n  Run 'leafscan --help' for command reference.\n")
 
 
+# ── leafscan chain ─────────────────────────────────────────────────────────────
+@main.command()
+@click.argument("report_id_or_file", required=False)
+def chain(report_id_or_file):
+    """
+    Simulate an exploit chain from scan findings.
+    
+    If REPORT_ID_OR_FILE is omitted, the latest scan report will be analyzed.
+    """
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error
+    from leafscan.core.config import load_config
+    from leafscan.core.chain_simulator import simulate_exploit_chain
+
+    print_banner("Exploit Chain Simulation")
+
+    # Load findings
+    data, err_msg = _load_findings_helper(report_id_or_file)
+    if err_msg:
+        error(err_msg)
+        sys.exit(1)
+
+    target = data.get("target", "unknown-target")
+    findings = data.get("findings", [])
+    info(f"Target: {target}")
+    info(f"Loaded {len(findings)} findings from report: {data.get('report_id')}")
+
+    cfg = load_config()
+    result = simulate_exploit_chain(findings, target, cfg)
+
+    if HAS_RICH and console:
+        from rich.markdown import Markdown
+        console.print(Markdown(result))
+    else:
+        print(result)
+
+
+# ── leafscan patch ─────────────────────────────────────────────────────────────
+@main.command()
+@click.argument("finding_index_or_id")
+@click.option("--dir", "source_dir", required=True, help="Local directory of the target codebase.")
+@click.option("--report", "report_id_or_file", default=None, help="The report containing the finding (uses latest if omitted).")
+def patch(finding_index_or_id, source_dir, report_id_or_file):
+    """
+    Generate an AI code patch to remediate a finding.
+    
+    FINDING_INDEX_OR_ID is the index (1-based number) of the finding in the report.
+    """
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error
+    from leafscan.core.config import load_config
+    from leafscan.core.patch_generator import generate_git_patch
+
+    print_banner("AI Code Patch Generator")
+
+    # Load findings
+    data, err_msg = _load_findings_helper(report_id_or_file)
+    if err_msg:
+        error(err_msg)
+        sys.exit(1)
+
+    findings = data.get("findings", [])
+    if not findings:
+        error("No findings present in the report to patch.")
+        sys.exit(1)
+
+    target_finding = None
+    if finding_index_or_id.isdigit():
+        idx = int(finding_index_or_id) - 1
+        if 0 <= idx < len(findings):
+            target_finding = findings[idx]
+    else:
+        # Search by title match
+        for f in findings:
+            if finding_index_or_id.lower() in f.get("title", "").lower():
+                target_finding = f
+                break
+
+    if not target_finding:
+        error(f"Finding not found matching: '{finding_index_or_id}'")
+        sys.exit(1)
+
+    info(f"Target Finding: {target_finding.get('title')}")
+    info(f"Local Source Directory: {source_dir}")
+
+    cfg = load_config()
+    result = generate_git_patch(target_finding, source_dir, cfg)
+
+    if HAS_RICH and console:
+        console.print(result)
+    else:
+        print(result)
+
+
+def _load_findings_helper(report_name_or_id):
+    from leafscan.report.generator import list_reports
+    from leafscan.core.config import FINDINGS_DIR
+    import json
+
+    reports = list_reports()
+    if not reports:
+        return None, "No reports found. Run a scan first."
+
+    target_report = None
+    if not report_name_or_id:
+        target_report = reports[0]
+    elif report_name_or_id.isdigit():
+        idx = int(report_name_or_id) - 1
+        if 0 <= idx < len(reports):
+            target_report = reports[idx]
+    else:
+        for r in reports:
+            if report_name_or_id in r["name"]:
+                target_report = r
+                break
+
+    if not target_report:
+        return None, f"Report '{report_name_or_id}' not found."
+
+    json_path = FINDINGS_DIR / f"{target_report['name']}.json"
+    if not json_path.exists():
+        return None, f"JSON findings file not found at: {json_path}"
+
+    try:
+        with open(json_path) as f:
+            data = json.load(f)
+            return data, None
+    except Exception as e:
+        return None, f"Failed to load JSON findings: {e}"
+
+
 if __name__ == "__main__":
     main()
