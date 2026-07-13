@@ -52,6 +52,7 @@ def main(ctx):
       leafscan setup                         First-run configuration wizard
       leafscan scan https://target.com       Scan a target (requires authorization)
       leafscan ask what is XSS               Ask questions directly to the AI RAG engine
+      leafscan opencode                      Launch interactive Leaf OpenCode AI coding partner
       leafscan audit --dir <path>            Run local SAST codebase security audit
       leafscan report list                   List saved reports
     """
@@ -618,6 +619,7 @@ def help_cmd():
 
   [bold green]AI CYBERSECURITY SANDBOX (RAG INTEGRATED)[/bold green]
   [green]leafscan ask "<question>"[/green]                  Query Leaf Security AI (hybrid offline/online corporate RAG)
+  [green]leafscan opencode[/green]                          Launch Leaf OpenCode (interactive AI coding partner)
   [green]leafscan chain <report_id>[/green]                  Simulate multi-stage exploit chain from scan
   [green]leafscan patch <finding_no> --dir <path>[/green]   Generate Git unified diff patch for finding
 
@@ -856,12 +858,17 @@ def ask(question):
         sys.exit(1)
 
     cfg = load_config()
-    # Temporarily enable AI if not configured so the user can test easily
-    if not cfg.get("ai", {}).get("enabled"):
-        cfg["ai"] = cfg.get("ai", {})
-        cfg["ai"]["enabled"] = True
-        if not cfg["ai"].get("provider"):
-            cfg["ai"]["provider"] = "leaf-ai"
+    cfg = load_config()
+    # Always ensure AI block exists
+    cfg["ai"] = cfg.get("ai", {})
+    cfg["ai"]["enabled"] = True
+    
+    # Force leaf-ai provider if no API key or OpenRouter configuration is available
+    import os
+    if not cfg["ai"].get("api_key") and not os.environ.get("OPENROUTER_API_KEY"):
+        cfg["ai"]["provider"] = "leaf-ai"
+    elif not cfg["ai"].get("provider"):
+        cfg["ai"]["provider"] = "leaf-ai"
 
     info("Querying AI Client...")
     client = AIClient(cfg)
@@ -1000,6 +1007,86 @@ def skills_setup():
         error(f"Failed to install skills: {e}")
         if zip_path.exists():
             zip_path.unlink()
+
+
+# ── leafscan opencode ──────────────────────────────────────────────────────────
+@main.command("opencode")
+@click.option("--dir", "target_dir", default=".", help="Directory to load into Leaf OpenCode.")
+def opencode(target_dir):
+    """
+    Launch Leaf OpenCode — Integrated AI Coding & Compliance Agent.
+    
+    An interactive TUI coding companion to review, audit, and patch security flaws in your code.
+    """
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error, success
+    from leafscan.core.config import load_config
+    from leafscan.core.ai_client import AIClient
+    import sys
+    
+    print_banner("Leaf OpenCode v3.0.0")
+    if HAS_RICH and console:
+        console.print("[dim]Powered by Leaf Security AI · Jovin Joel Groups of Company[/dim]\n")
+        info(f"Initialized Leaf OpenCode workspace: {target_dir}")
+        console.print("[dim]Type your coding queries below. Type 'exit' or 'quit' to close.[/dim]\n")
+    else:
+        print("Powered by Leaf Security AI · Jovin Joel Groups of Company\n")
+        print(f"Initialized Leaf OpenCode workspace: {target_dir}")
+        print("Type your coding queries below. Type 'exit' or 'quit' to close.\n")
+        
+    cfg = load_config()
+    cfg["ai"] = cfg.get("ai", {})
+    cfg["ai"]["enabled"] = True
+    
+    # Fallback to local RAG model if no credentials exist
+    import os
+    if not cfg["ai"].get("api_key") and not os.environ.get("OPENROUTER_API_KEY"):
+        cfg["ai"]["provider"] = "leaf-ai"
+    elif not cfg["ai"].get("provider"):
+        cfg["ai"]["provider"] = "leaf-ai"
+        
+    client = AIClient(cfg)
+    
+    while True:
+        try:
+            query = click.prompt("leaf-opencode> ", prompt_suffix="")
+            if query.strip().lower() in ("exit", "quit"):
+                if HAS_RICH and console:
+                    success("Goodbye from Leaf OpenCode!")
+                else:
+                    print("Goodbye from Leaf OpenCode!")
+                break
+            if not query.strip():
+                continue
+            
+            if HAS_RICH and console:
+                info("Thinking...")
+            else:
+                print("Thinking...")
+                
+            system_prompt = "You are Leaf OpenCode, an AI coding and security engineering assistant built by Leaf Security AI. Use local skills files to resolve queries."
+            response = client.call_ai(query, system_prompt)
+            
+            if HAS_RICH and console:
+                from rich.markdown import Markdown
+                console.print("\n[bold green]Leaf OpenCode Response:[/bold green]")
+                console.print(Markdown(response))
+                console.print()
+            else:
+                print("\nLeaf OpenCode Response:")
+                print(response)
+                print()
+        except KeyboardInterrupt:
+            if HAS_RICH and console:
+                console.print()
+                success("Goodbye from Leaf OpenCode!")
+            else:
+                print("\nGoodbye from Leaf OpenCode!")
+            break
+        except Exception as e:
+            if HAS_RICH and console:
+                error(f"Error: {e}")
+            else:
+                print(f"Error: {e}")
 
 
 if __name__ == "__main__":

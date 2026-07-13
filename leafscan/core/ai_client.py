@@ -121,41 +121,18 @@ class AIClient:
         corp_context = "\n".join(context_snippets) if context_snippets else ""
         context_status = "FOUND" if corp_context else "MISSING_LOCAL_FALLBACK_TO_API"
         
-        # 2. Check for Offline Mode (explicit environment flag or missing internet connection)
+        # 2. Check for Offline Mode (explicit environment flag or missing API key config)
         is_offline = os.environ.get("LEAF_AI_OFFLINE", "false").lower() == "true"
-        
-        # Check connection status if not explicitly flagged offline
-        if not is_offline:
-            try:
-                requests.get("https://openrouter.ai", timeout=2)
-            except Exception:
-                is_offline = True
+        openrouter_key = self.api_key or os.environ.get("OPENROUTER_API_KEY")
+        if not openrouter_key:
+            is_offline = True
 
         if is_offline:
-            # Offline path: Try to run local PyTorch LeafGPT model if trained checkpoint exists
-            checkpoint_path = "/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/leaf_gpt_checkpoint.pt"
-            if os.path.exists(checkpoint_path):
-                try:
-                    sys.path.append("/home/kali/.gemini/antigravity/scratch/leaf-ai-llm")
-                    import torch
-                    from train_llm import LeafGPT, CharTokenizer
-                    tokenizer = CharTokenizer()
-                    model = LeafGPT(vocab_size=tokenizer.vocab_size)
-                    model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
-                    model.eval()
-                    
-                    full_prompt = f"System: {system}\nContext: {corp_context}\nQuestion: {prompt}\nAnswer:"
-                    context_tokens = torch.tensor([tokenizer.encode(full_prompt[:256])], dtype=torch.long)
-                    res_tokens = model.generate(context_tokens, max_new_tokens=150)[0].tolist()
-                    return tokenizer.decode(res_tokens[len(context_tokens[0]):])
-                except Exception as e:
-                    logger.warning(f"Failed to load offline LeafGPT weights: {e}")
-            
-            # Local rules-based RAG offline fallback if no PyTorch checkpoint is present
+            # Local rules-based RAG offline fallback (offline model weights removed)
             if corp_context:
-                return f"[Leaf Security AI - Offline RAG Mode]\n(No local PyTorch weights found. Matching from local corporate intelligence context):\n\n{corp_context[:800]}..."
+                return f"[Leaf Security AI - Offline RAG Mode]\n(Matching from local corporate intelligence context):\n\n{corp_context[:800]}..."
             else:
-                return "[Leaf Security AI - Offline Mode]\nOffline mode active but no matching local dataset context or PyTorch model weights were found. Please connect to the internet to run online API queries."
+                return "[Leaf Security AI - Offline Mode]\nOffline mode active but no matching local dataset context found. Please connect to the internet to run online API queries."
 
         # 3. Online path: Enrich and route
         # If context was missing locally, instruct the LLM to use its global cybersecurity knowledge base
@@ -195,17 +172,17 @@ User Prompt: {prompt}
                     "temperature": 0.2
                 }
                 api_endpoint = self.api_url if "local" not in self.api_url else "https://openrouter.ai/api/v1/chat/completions"
-                r = requests.post(api_endpoint, headers=headers, json=body, timeout=20)
+                r = requests.post(api_endpoint, headers=headers, json=body, timeout=5)
                 if r.ok:
                     return r.json()["choices"][0]["message"]["content"]
                 else:
-                    return f"API Query Error: {r.status_code} - {r.text}"
+                    logger.warning(f"API query error: {r.status_code}")
             except Exception as e:
-                return f"Error connecting to user API: {e}"
+                logger.warning(f"Error connecting to user API: {e}. Falling back to offline RAG.")
                 
-        # Local RAG fallback if no API key is configured
+        # Local RAG fallback if API fails or is not configured
         if corp_context:
-            return f"[Leaf Security AI - Offline RAG Mode]\n(No API key configured. Matching from local context):\n\n{corp_context[:800]}..."
+            return f"[Leaf Security AI - Offline RAG Mode]\n(Answering from local context):\n\n{corp_context[:800]}..."
         return "[Leaf Security AI] No API key configured and no local dataset matches found. Set OPENROUTER_API_KEY or run config wizard."
 
     def _call_anthropic(self, prompt: str, system: str) -> str:

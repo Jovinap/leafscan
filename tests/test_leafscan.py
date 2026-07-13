@@ -299,3 +299,13 @@ class TestV215Features:
         result = runner.invoke(skills_list)
         # Should return exit_code 0 (prints either listing or error to setup since agents dir might be empty)
         assert result.exit_code == 0
+
+    def test_opencode_command(self):
+        from click.testing import CliRunner
+        from leafscan.cli import opencode
+        runner = CliRunner()
+        # Simulate typing 'exit' to immediately exit the TUI loop
+        result = runner.invoke(opencode, ["--dir", "/tmp"], input="exit\n")
+        assert result.exit_code == 0
+        assert "Leaf OpenCode" in result.output
+        assert "Goodbye" in result.output
