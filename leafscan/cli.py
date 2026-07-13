@@ -605,12 +605,17 @@ def help_cmd():
 
     if HAS_RICH and console:
         console.print("""
-  [bold green]SCANNING[/bold green]
-  [green]leafscan scan <target>[/green]                    Scan a target URL
-  [green]leafscan scan <target> --i-have-permission[/green] Skip auth prompt (you confirmed authorization)
-  [green]leafscan scan <target> -m headers,tls,ports[/green] Only run specific modules
-  [green]leafscan scan <target> -p stealth[/green]         Use stealth scan profile
-  [green]leafscan scan <target> --verbose[/green]          Show detailed module output
+  [bold green]SCANNING & SAST AUDITS[/bold green]
+  [green]leafscan scan <target>[/green]                    Scan a target URL or host
+  [green]leafscan scan <target> --min-severity high[/green] Filter report output by severity
+  [green]leafscan scan <target> --exclude-modules ports[/green] Exclude specific modules
+  [green]leafscan scan <target> --header "Key:Val"[/green]  Inject custom request headers
+  [green]leafscan scan <target> --html-export r.html[/green] Save interactive HTML dashboard report
+  [green]leafscan audit --dir <path>[/green]                 Run local SAST codebase security audit
+
+  [bold green]AI CYBERSECURITY SANDBOX[/bold green]
+  [green]leafscan chain <report_id>[/green]                  Simulate multi-stage exploit chain from scan
+  [green]leafscan patch <finding_no> --dir <path>[/green]   Generate Git unified diff patch for finding
 
   [bold green]SCAN MODULES[/bold green]
   ports     · TCP port scanner (common web/admin ports)
@@ -623,21 +628,22 @@ def help_cmd():
   cve       · Outdated software / known CVE pattern matching
   info      · Sensitive data exposure (API keys, tokens, stack traces)
   misconfig · CORS, cookie security, HTTP methods, directory listing
+  passive   · Passive directory discovery, robot maps, and security policies
 
   [bold green]REPORTS & HISTORY[/bold green]
-  [green]leafscan history[/green]                          View scan history
-  [green]leafscan report list[/green]                      List saved reports
-  [green]leafscan report show <id>[/green]                 Show report content
+  [green]leafscan history[/green]                          View scan history logs
+  [green]leafscan report list[/green]                      List saved markdown/json reports
+  [green]leafscan report show <id>[/green]                 Show report content details
 
   [bold green]SETUP & AUTH[/bold green]
-  [green]leafscan setup[/green]                            First-run setup wizard
-  [green]leafscan auth login[/green]                       Log in to platform
+  [green]leafscan setup[/green]                            Interactive setup wizard
+  [green]leafscan auth login[/green]                       Log in to platform instance
   [green]leafscan auth logout[/green]                      Log out
-  [green]leafscan auth status[/green]                      Show auth status
-  [green]leafscan config show[/green]                      Show current config
-  [green]leafscan config set <key> <value>[/green]         Update a config value
+  [green]leafscan auth status[/green]                      Show login auth status
+  [green]leafscan config show[/green]                      Show current configuration
+  [green]leafscan config set <key> <value>[/green]         Update configuration values
   [green]leafscan update[/green]                           Update to latest version
-  [green]leafscan --version[/green]                        Show version
+  [green]leafscan --version[/green]                        Show version information
 
   [bold green]RESPONSIBLE USE[/bold green]
   [dim]• Only scan systems you own or have explicit written permission to test[/dim]
