@@ -121,6 +121,36 @@ class AIClient:
         corp_context = "\n".join(context_snippets) if context_snippets else ""
         context_status = "FOUND" if corp_context else "MISSING_LOCAL_FALLBACK_TO_API"
         
+        # 1.5. Search local agentskills.io library for matching playbooks
+        skills_context = ""
+        from pathlib import Path
+        skills_dir = Path("/home/kali/.gemini/antigravity/scratch/leafscan/.agents/skills")
+        if not skills_dir.exists():
+            skills_dir = Path(".agents/skills")
+        if skills_dir.exists():
+            try:
+                query_words = [w.strip("?,.!") for w in prompt.lower().split() if len(w) > 3]
+                matched_skills = []
+                for folder in skills_dir.iterdir():
+                    if not folder.is_dir():
+                        continue
+                    if any(w in folder.name.lower() for w in query_words):
+                        skill_file = folder / "SKILL.md"
+                        if skill_file.exists():
+                            with open(skill_file, "r", encoding="utf-8") as sf:
+                                content = sf.read()
+                                if content.startswith("---"):
+                                    parts = content.split("---", 2)
+                                    if len(parts) >= 3:
+                                        content = parts[2].strip()
+                                matched_skills.append((folder.name, content))
+                                if len(matched_skills) >= 2:
+                                    break
+                if matched_skills:
+                    skills_context = "\n\n".join([f"### Local Skill: {name}\n{body}" for name, body in matched_skills])
+            except Exception as e:
+                logger.error(f"Error searching skills directory offline: {e}")
+
         # 2. Check for Offline Mode (explicit environment flag or missing API key config)
         is_offline = os.environ.get("LEAF_AI_OFFLINE", "false").lower() == "true"
         openrouter_key = self.api_key or os.environ.get("OPENROUTER_API_KEY")
@@ -129,10 +159,16 @@ class AIClient:
 
         if is_offline:
             # Local rules-based RAG offline fallback (offline model weights removed)
+            response_parts = []
             if corp_context:
-                return f"[Leaf Security AI - Offline RAG Mode]\n(Matching from local corporate intelligence context):\n\n{corp_context[:800]}..."
+                response_parts.append(f"#### Corporate Threat Intelligence Matches:\n{corp_context[:800]}...")
+            if skills_context:
+                response_parts.append(f"#### Mapped Cybersecurity Skills:\n{skills_context[:3000]}")
+                
+            if response_parts:
+                return f"[Leaf Security AI - Offline RAG Mode]\n\n" + "\n\n".join(response_parts)
             else:
-                return "[Leaf Security AI - Offline Mode]\nOffline mode active but no matching local dataset context found. Please connect to the internet to run online API queries."
+                return "[Leaf Security AI - Offline Mode]\nOffline mode active but no matching local corporate dataset context or cybersecurity skills files were found. Run 'leafscan skills setup' to download the skills database or configure an API key for online queries."
 
         # 3. Online path: Enrich and route
         # If context was missing locally, instruct the LLM to use its global cybersecurity knowledge base
