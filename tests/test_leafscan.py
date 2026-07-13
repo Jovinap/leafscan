@@ -292,3 +292,10 @@ class TestV215Features:
         assert result.exit_code == 0
         assert "AI Response" in result.output
 
+    def test_skills_list_command(self):
+        from click.testing import CliRunner
+        from leafscan.cli import skills_list
+        runner = CliRunner()
+        result = runner.invoke(skills_list)
+        # Should return exit_code 0 (prints either listing or error to setup since agents dir might be empty)
+        assert result.exit_code == 0

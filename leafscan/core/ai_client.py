@@ -47,8 +47,10 @@ class AIClient:
             self.api_url = prov_info["url"]
 
     def call_ai(self, prompt: str, system: str = "") -> str:
-        if not self.enabled or not self.api_key:
+        if not self.enabled:
             return "⚠️ AI integration is not configured or enabled."
+        if self.provider != "leaf-ai" and not self.api_key:
+            return "⚠️ AI integration is configured but API key is missing. Run 'leafscan setup' to add."
 
         try:
             # 1. Handle custom Leaf Security AI local/RAG provider

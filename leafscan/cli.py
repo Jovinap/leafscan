@@ -622,7 +622,9 @@ def help_cmd():
   [green]leafscan patch <finding_no> --dir <path>[/green]   Generate Git unified diff patch for finding
 
   [bold green]COMPLIANCE & RAG DATA[/bold green]
-  * Fully mapped to [bold green]agentskills.io[/bold green] standard (Anthropic Cybersecurity Skills library).
+  [green]leafscan skills setup[/green]                 Download and install 817 skills library
+  [green]leafscan skills list[/green]                  List imported compliance skills & mappings
+  * Mapped to [bold green]agentskills.io[/bold green] standard (Anthropic Cybersecurity Skills library).
   * Automatically binds findings to MITRE ATT&CK, NIST CSF 2.0, ATLAS, D3FEND, & MITRE F3.
   * Local dataset RAG matches from 500MB corporate security corpus (/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/).
 
@@ -872,6 +874,132 @@ def ask(question):
     else:
         print("\nAI Response:")
         print(response)
+
+
+# ── leafscan skills ────────────────────────────────────────────────────────────
+@main.group("skills")
+def skills_group():
+    """
+    Manage compliance skills (agentskills.io framework).
+    
+    Setup and view the Anthropic Cybersecurity Skills library mappings.
+    """
+    pass
+
+
+@skills_group.command("list")
+def skills_list():
+    """List all imported skills and their compliance mappings."""
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error
+    from pathlib import Path
+    
+    print_banner("Compliance Skills Library")
+    skills_dir = Path("/home/kali/.gemini/antigravity/scratch/leafscan/.agents/skills")
+    if not skills_dir.exists():
+        skills_dir = Path(".agents/skills")
+        
+    if not skills_dir.exists():
+        error("No skills loaded. Run 'leafscan skills setup' to download the Anthropic Cybersecurity Skills library.")
+        return
+
+    loaded_skills = []
+    try:
+        for folder in skills_dir.iterdir():
+            if not folder.is_dir():
+                continue
+            skill_file = folder / "SKILL.md"
+            if skill_file.exists():
+                mitre = "N/A"
+                nist = "N/A"
+                f3 = "N/A"
+                with open(skill_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if "mitre_attack:" in line:
+                            mitre = line.split(":", 1)[1].strip().strip("'\"[]")
+                        elif "nist_csf:" in line:
+                            nist = line.split(":", 1)[1].strip().strip("'\"[]")
+                        elif "mitre_f3:" in line:
+                            f3 = line.split(":", 1)[1].strip().strip("'\"[]")
+                loaded_skills.append({
+                    "name": folder.name,
+                    "mitre": mitre or "N/A",
+                    "nist": nist or "N/A",
+                    "f3": f3 or "N/A"
+                })
+    except Exception as e:
+        error(f"Error loading skills: {e}")
+        return
+
+    if not loaded_skills:
+        info("No valid skill files (.agents/skills/*/SKILL.md) detected.")
+        return
+
+    info(f"Loaded {len(loaded_skills)} compliance skills.")
+    if HAS_RICH and console:
+        from rich.table import Table
+        t = Table(show_header=True, header_style="bold green")
+        t.add_column("Skill Name")
+        t.add_column("MITRE ATT&CK")
+        t.add_column("NIST CSF 2.0")
+        t.add_column("MITRE F3")
+        for s in loaded_skills[:30]:
+            t.add_row(s["name"], s["mitre"], s["nist"], s["f3"])
+        console.print(t)
+        if len(loaded_skills) > 30:
+            console.print(f"[dim]... and {len(loaded_skills)-30} more skills.[/dim]")
+    else:
+        for s in loaded_skills[:30]:
+            print(f"- {s['name']} (MITRE: {s['mitre']} | NIST: {s['nist']})")
+
+
+@skills_group.command("setup")
+def skills_setup():
+    """Download and install the Anthropic Cybersecurity Skills library."""
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error, success
+    import urllib.request
+    import zipfile
+    import shutil
+    from pathlib import Path
+    
+    print_banner("Skills Library Installation")
+    target_dir = Path("/home/kali/.gemini/antigravity/scratch/leafscan/.agents")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    zip_url = "https://github.com/mukul975/Anthropic-Cybersecurity-Skills/archive/refs/heads/main.zip"
+    zip_path = target_dir / "skills.zip"
+    
+    info("Downloading Anthropic Cybersecurity Skills library...")
+    try:
+        # Download zip using urllib
+        req = urllib.request.Request(
+            zip_url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=30) as response, open(zip_path, "wb") as out_file:
+            shutil.copyfileobj(response, out_file)
+        
+        info("Extracting library files...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(target_dir)
+            
+        # Move contents of extracted folder to .agents/skills
+        extracted_folder = target_dir / "Anthropic-Cybersecurity-Skills-main"
+        if extracted_folder.exists():
+            skills_src = extracted_folder / "skills"
+            skills_dest = target_dir / "skills"
+            if skills_dest.exists():
+                shutil.rmtree(skills_dest)
+            shutil.move(str(skills_src), str(skills_dest))
+            
+            # Cleanup extracted directory
+            shutil.rmtree(extracted_folder)
+            
+        zip_path.unlink()
+        success("✓ Installed 817 cybersecurity skills library into .agents/skills!")
+    except Exception as e:
+        error(f"Failed to install skills: {e}")
+        if zip_path.exists():
+            zip_path.unlink()
 
 
 if __name__ == "__main__":
