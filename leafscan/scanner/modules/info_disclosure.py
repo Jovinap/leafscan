@@ -6,22 +6,22 @@ Reference: OWASP Testing Guide OTG-INFO-004, CWE-200
 import requests
 import re
 
-# Patterns that indicate sensitive data exposure
+# Patterns that indicate sensitive data exposure (refined to minimize false positives)
 DISCLOSURE_PATTERNS = [
     # AWS credentials
-    (re.compile(r"AKIA[0-9A-Z]{16}", re.IGNORECASE),
+    (re.compile(r"\bAKIA[0-9A-Z]{16}\b", re.IGNORECASE),
      "AWS Access Key ID",
      "critical",
      "An AWS Access Key ID was found in the response. This may grant access to AWS resources."),
 
-    # Generic API keys (common patterns)
-    (re.compile(r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"]?([a-zA-Z0-9_\-]{20,})", re.IGNORECASE),
+    # Generic API keys (requiring quotes to avoid matching variables/code property definitions)
+    (re.compile(r"(?:api[_-]?key|apikey)\s*[=:]\s*['\"]([a-zA-Z0-9_\-]{20,})['\"]", re.IGNORECASE),
      "API Key",
      "high",
      "An API key value was exposed in the page response."),
 
     # JWT tokens
-    (re.compile(r"eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+"),
+    (re.compile(r"\beyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b"),
      "JWT Token",
      "high",
      "A JSON Web Token (JWT) was found in the response. Exposed JWTs may allow session hijacking."),
@@ -32,8 +32,8 @@ DISCLOSURE_PATTERNS = [
      "critical",
      "A private key was exposed in the HTTP response. This completely compromises any associated encryption."),
 
-    # Email addresses in stack traces
-    (re.compile(r"(?:Exception|Error|Traceback|at [\w.]+\([\w.]+\.java:\d+\))", re.IGNORECASE),
+    # Stack traces (requiring structural trace patterns to avoid matching simple words like 'Error' / 'error')
+    (re.compile(r"(?:Traceback \(most recent call last\):|Exception in thread \"\w+\"|at [\w.]+\([\w.]+\.java:\d+\)|at [\w.]+\.[\w_]+\(native\))", re.IGNORECASE),
      "Stack Trace / Error Disclosure",
      "medium",
      "A stack trace or error message was found in the response, disclosing internal code paths."),
@@ -44,26 +44,26 @@ DISCLOSURE_PATTERNS = [
      "low",
      "An internal/private IP address was found in the response, revealing internal network topology."),
 
-    # Database connection strings
-    (re.compile(r"(?:mysql|postgresql|mongodb|redis|jdbc|sqlserver)://[^\s\"'<>]{5,}", re.IGNORECASE),
+    # Database connection strings (requiring auth info to avoid general scheme references)
+    (re.compile(r"(?:mysql|postgresql|mongodb|redis|sqlserver)://[^:\s\"'<>]+:[^@\s\"'<>]+@[^\s\"'<>]{5,}", re.IGNORECASE),
      "Database Connection String",
      "critical",
-     "A database connection string was found in the response, potentially exposing credentials."),
+     "A database connection string containing credentials was found in the response."),
 
-    # Password in response
-    (re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*['\"]?(\S{4,})", re.IGNORECASE),
+    # Password in response (requiring quotes and excluding minified code values like !0)
+    (re.compile(r"(?:password|passwd|pwd)\s*[=:]\s*['\"]([^'\"\s\!;]{6,})['\"]", re.IGNORECASE),
      "Password Disclosure",
      "critical",
      "A password value appears to be present in the HTTP response body."),
 
     # Google API keys
-    (re.compile(r"AIza[0-9A-Za-z_\-]{35}", re.IGNORECASE),
+    (re.compile(r"\bAIza[0-9A-Za-z_\-]{35}\b", re.IGNORECASE),
      "Google API Key",
      "high",
      "A Google API Key was found. Verify it is restricted by referrer and not abusable."),
 
     # GitHub tokens
-    (re.compile(r"gh[ps]_[a-zA-Z0-9]{36}", re.IGNORECASE),
+    (re.compile(r"\bgh[ps]_[a-zA-Z0-9]{36}\b", re.IGNORECASE),
      "GitHub Personal Access Token",
      "critical",
      "A GitHub Personal Access Token was found. This may grant access to private repos."),
