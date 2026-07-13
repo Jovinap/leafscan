@@ -136,6 +136,12 @@ def save_report(target, findings, scan_duration, profile, config=None):
 
     # Save JSON
     json_path = FINDINGS_DIR / f"{base}.json"
+    summary_counts = {s: 0 for s in ("critical", "high", "medium", "low", "info")}
+    for f in findings:
+        sev = f.get("severity", "info").lower()
+        if sev in summary_counts:
+            summary_counts[sev] += 1
+
     with open(json_path, "w") as f:
         from leafscan import __version__, __author__
         json.dump({
@@ -147,7 +153,7 @@ def save_report(target, findings, scan_duration, profile, config=None):
             "scanner_version": __version__,
             "scanner_author":  __author__,
             "findings":        findings,
-            "summary":         {s: 0 for s in ("critical","high","medium","low","info")},
+            "summary":         summary_counts,
         }, f, indent=2)
 
     return report_id, md_path, json_path
