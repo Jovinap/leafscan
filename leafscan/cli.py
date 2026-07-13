@@ -380,10 +380,15 @@ def update():
 
     info("Running: pip install --upgrade leafscan")
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "leafscan"],
-            capture_output=True, text=True
-        )
+        cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "leafscan"]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        # Self-heal PEP 668 externally-managed-environment restriction on Kali/Debian/Ubuntu
+        if result.returncode != 0 and "externally-managed-environment" in result.stderr:
+            info("Externally-managed environment detected. Appending --break-system-packages...")
+            cmd.append("--break-system-packages")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
         if result.returncode == 0:
             success("LeafScan updated successfully! Restart your terminal or run 'leafscan --version'.")
         else:
