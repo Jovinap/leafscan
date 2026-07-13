@@ -96,7 +96,6 @@ class AIClient:
 
     def _call_leaf_ai(self, prompt: str, system: str) -> str:
         import os
-        import sys
         
         # Load corporate threat intelligence context from 500MB dataset
         dataset_path = "/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/leaf_security_ai_dataset.txt"
@@ -111,7 +110,7 @@ class AIClient:
                     for line in f:
                         if any(k in line.lower() for k in found_keywords):
                             context_snippets.append(line.strip())
-                            if len(context_snippets) >= 15:
+                            if len(context_snippets) >= 20: # Expanded context capacity
                                 break
             except Exception as e:
                 logger.error(f"Error reading leaf corporate dataset: {e}")
@@ -126,25 +125,7 @@ class AIClient:
 
 User Prompt: {prompt}
 """
-        # If a local checkpoint exists, run local inference
-        checkpoint_path = "/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/leaf_gpt_checkpoint.pt"
-        if os.path.exists(checkpoint_path):
-            try:
-                sys.path.append("/home/kali/.gemini/antigravity/scratch/leaf-ai-llm")
-                import torch
-                from train_llm import LeafGPT, CharTokenizer
-                tokenizer = CharTokenizer()
-                model = LeafGPT(vocab_size=tokenizer.vocab_size)
-                model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
-                model.eval()
-                
-                context_tokens = torch.tensor([tokenizer.encode(enriched_prompt[:256])], dtype=torch.long)
-                res_tokens = model.generate(context_tokens, max_new_tokens=150)[0].tolist()
-                return tokenizer.decode(res_tokens[len(context_tokens[0]):])
-            except Exception as e:
-                logger.warning(f"Failed to run local LeafGPT checkpoint: {e}. Falling back to API routing.")
-
-        # Fallback: route the enriched RAG prompt to OpenRouter
+        # Route the enriched RAG prompt directly to the API (OpenRouter/Gemini/etc.)
         openrouter_key = self.api_key or os.environ.get("OPENROUTER_API_KEY")
         if openrouter_key:
             try:
@@ -168,7 +149,7 @@ User Prompt: {prompt}
             except Exception:
                 pass
                 
-        return f"[Leaf Security AI Local Offline Mode]\nAnalysing vulnerability with local dataset context.\nMatched Context: {corp_context[:300]}..."
+        return f"[Leaf Security AI Local Offline Mode]\nAnalysing vulnerability with local dataset context.\nMatched Context: {corp_context[:400]}..."
 
     def _call_anthropic(self, prompt: str, system: str) -> str:
         headers = {
