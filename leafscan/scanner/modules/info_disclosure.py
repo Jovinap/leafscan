@@ -71,54 +71,92 @@ DISCLOSURE_PATTERNS = [
 
 
 def run(target: str, config: dict) -> list:
-    """Scan the target response for sensitive information disclosure patterns."""
+    """Scan the target page response and referenced JavaScript files for sensitive information exposure patterns."""
     findings = []
     timeout  = config.get("scan", {}).get("timeout", 12)
     ua       = config.get("scan", {}).get("user_agent", "LeafScan/2.0")
+    headers  = {"User-Agent": ua}
 
     try:
         r = requests.get(
             target,
             timeout=timeout,
-            headers={"User-Agent": ua},
+            headers=headers,
             verify=True,
             allow_redirects=True,
         )
         body = r.text
+        pages_to_scan = [(target, body)]
 
-        for pattern, finding_type, severity, description in DISCLOSURE_PATTERNS:
-            match = pattern.search(body)
-            if match:
-                # Safely excerpt the match (redact sensitive values)
-                raw_match = match.group(0)
-                if len(raw_match) > 20 and severity == "critical":
-                    # Partial redaction for very sensitive values
-                    shown = raw_match[:8] + "..." + raw_match[-4:]
-                else:
-                    shown = raw_match[:80]
+        # Extract up to 10 referenced client-side JavaScript files from the HTML body
+        js_patterns = re.findall(r'<script\s+[^>]*src=["\']([^"\']+\.js(?:[?#][^"\']*)?)["\']', body, re.IGNORECASE)
+        scanned_assets = set()
+        
+        from urllib.parse import urljoin, urlparse
+        
+        for js_path in js_patterns:
+            if len(scanned_assets) >= 10:
+                break
+                
+            # Resolve relative URLs
+            full_js_url = urljoin(target, js_path)
+            
+            # Avoid duplicate scans or external domains unless they share the same base host
+            if full_js_url in scanned_assets:
+                continue
+            
+            scanned_assets.add(full_js_url)
+            
+            # Only scan assets belonging to the target domain or common client assets
+            target_domain = urlparse(target).netloc
+            asset_domain = urlparse(full_js_url).netloc
+            if asset_domain != target_domain:
+                continue
+                
+            try:
+                js_r = requests.get(
+                    full_js_url,
+                    timeout=timeout,
+                    headers=headers,
+                    verify=True,
+                )
+                if js_r.status_code == 200:
+                    pages_to_scan.append((full_js_url, js_r.text))
+            except Exception:
+                pass
 
-                findings.append({
-                    "title":       f"Sensitive Data Exposed: {finding_type}",
-                    "severity":    severity,
-                    "vuln_type":   "Information Disclosure",
-                    "url":         target,
-                    "description": description,
-                    "remediation": (
-                        f"Remove all sensitive data from HTTP responses. "
-                        f"Ensure secrets are never committed to source code or served in pages. "
-                        f"Use environment variables and secrets managers (HashiCorp Vault, AWS Secrets Manager). "
-                        f"Review CWE-200: Exposure of Sensitive Information."
-                    ),
-                    "evidence":    f"Pattern matched in HTTP response body: '{shown}'",
-                    "steps":       (
-                        f"1. curl -s {target} | grep -iE '{finding_type.lower().replace(' ', '|')}'\n"
-                        f"2. Review page source for exposed values"
-                    ),
-                    "poc":         f"curl -s {target} | grep -P '{pattern.pattern[:60]}'",
-                    "impact":      f"Exposure of {finding_type.lower()} may allow unauthorized access to systems or data.",
-                })
-                # Avoid duplicate finding for same pattern type
+        for source_url, content in pages_to_scan:
+            for pattern, finding_type, severity, description in DISCLOSURE_PATTERNS:
+                match = pattern.search(content)
+                if match:
+                    raw_match = match.group(0)
+                    if len(raw_match) > 20 and severity == "critical":
+                        shown = raw_match[:8] + "..." + raw_match[-4:]
+                    else:
+                        shown = raw_match[:80]
+
+                    findings.append({
+                        "title":       f"Sensitive Data Exposed: {finding_type}",
+                        "severity":    severity,
+                        "vuln_type":   "Information Disclosure",
+                        "url":         source_url,
+                        "description": description,
+                        "remediation": (
+                            f"Remove all sensitive data from HTTP responses and static JS files. "
+                            f"Ensure secrets are never committed to source code or served in client assets. "
+                            f"Use environment variables and secrets managers. "
+                            f"Review CWE-200: Exposure of Sensitive Information."
+                        ),
+                        "evidence":    f"Pattern matched in resource body: '{shown}'",
+                        "steps":       (
+                            f"1. curl -s '{source_url}' | grep -iE '{finding_type.lower().replace(' ', '|')}'\n"
+                            f"2. Inspect resource code to locate exposed value"
+                        ),
+                        "poc":         f"curl -s '{source_url}' | grep -P '{pattern.pattern[:60]}'",
+                        "impact":      f"Exposure of {finding_type.lower()} may allow unauthorized access to systems or data.",
+                    })
     except Exception:
         pass
 
     return findings
+
