@@ -26,10 +26,90 @@ CVSS_VECTOR = {
 def generate_report_id():
     return f"LS-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
+def get_framework_mappings(vuln_type, title):
+    import os
+    import re
+    
+    mappings = {}
+    skills_dir = Path("/home/kali/.gemini/antigravity/scratch/leafscan/.agents/skills")
+    if not skills_dir.exists():
+        skills_dir = Path(".agents/skills")
+        if not skills_dir.exists():
+            return mappings
+
+    keywords = ["xss", "sqli", "port", "header", "cors", "ip address", "token", "key", "disclosure", "secret", "password", "tls", "ssl", "dns", "sitemap", "robots"]
+    match_targets = f"{vuln_type} {title}".lower()
+    matched_kws = [k for k in keywords if k in match_targets]
+    
+    if "sql" in match_targets:
+        matched_kws.append("sql")
+    if "cookie" in match_targets:
+        matched_kws.append("cookie")
+
+    try:
+        for folder in skills_dir.iterdir():
+            if not folder.is_dir():
+                continue
+            
+            folder_name = folder.name.lower()
+            if any(kw in folder_name for kw in matched_kws):
+                skill_file = folder / "SKILL.md"
+                if skill_file.exists():
+                    with open(skill_file, "r", encoding="utf-8") as f:
+                        frontmatter = []
+                        lines = f.readlines()
+                        in_fm = False
+                        for line in lines:
+                            stripped = line.strip()
+                            if stripped == "---":
+                                if not in_fm:
+                                    in_fm = True
+                                    continue
+                                else:
+                                    break
+                            if in_fm:
+                                frontmatter.append(stripped)
+                        
+                        for fm_line in frontmatter:
+                            if ":" in fm_line:
+                                key, val = fm_line.split(":", 1)
+                                key = key.strip().lower()
+                                val = val.strip().strip("'\"[]")
+                                if not val:
+                                    continue
+                                if key == "mitre_attack":
+                                    mappings["MITRE ATT&CK"] = val
+                                elif key == "nist_csf":
+                                    mappings["NIST CSF 2.0"] = val
+                                elif key == "mitre_f3":
+                                    mappings["MITRE F3 (Fraud)"] = val
+                                elif key == "d3fend":
+                                    mappings["MITRE D3FEND"] = val
+                                elif key == "atlas":
+                                    mappings["MITRE ATLAS"] = val
+                                elif key == "ai_rmf":
+                                    mappings["NIST AI RMF"] = val
+                if mappings:
+                    break
+    except Exception:
+        pass
+        
+    return mappings
+
+
 def build_finding_md(f, idx):
     sev  = f.get("severity","info").upper()
     cvss = CVSS_BASE.get(f.get("severity","info"), 0.0)
     vec  = CVSS_VECTOR.get(f.get("severity","info"), "")
+    
+    # Extract framework mappings
+    mappings = get_framework_mappings(f.get("vuln_type",""), f.get("title",""))
+    mappings_block = ""
+    if mappings:
+        mappings_block = "\n### Framework & Compliance Mappings\n| Framework | Mapping ID |\n|---|---|\n"
+        for fw, fwid in mappings.items():
+            mappings_block += f"| {fw} | `{fwid}` |\n"
+            
     return f"""
 ## Finding #{idx}: {f.get('title','Untitled')}
 
@@ -42,6 +122,8 @@ def build_finding_md(f, idx):
 
 ### Description
 {f.get('description', 'No description.')}
+
+{mappings_block}
 
 ### Steps to Reproduce
 {f.get('steps', 'No steps provided.')}
@@ -138,6 +220,7 @@ def save_report(target, findings, scan_duration, profile, config=None):
     json_path = FINDINGS_DIR / f"{base}.json"
     summary_counts = {s: 0 for s in ("critical", "high", "medium", "low", "info")}
     for f in findings:
+        f["mappings"] = get_framework_mappings(f.get("vuln_type",""), f.get("title",""))
         sev = f.get("severity", "info").lower()
         if sev in summary_counts:
             summary_counts[sev] += 1
