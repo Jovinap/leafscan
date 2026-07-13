@@ -1046,6 +1046,13 @@ def opencode(target_dir):
         
     client = AIClient(cfg)
     
+    import re
+    import subprocess
+    from pathlib import Path
+    
+    write_pattern = re.compile(r'```write_file:\s*([^\n]+)\n(.*?)\n```', re.DOTALL)
+    command_pattern = re.compile(r'```run_command\n(.*?)\n```', re.DOTALL)
+    
     while True:
         try:
             query = click.prompt("leaf-opencode> ", prompt_suffix="")
@@ -1063,7 +1070,20 @@ def opencode(target_dir):
             else:
                 print("Thinking...")
                 
-            system_prompt = "You are Leaf OpenCode, an AI coding and security engineering assistant built by Leaf Security AI. Use local skills files to resolve queries."
+            system_prompt = """You are Leaf OpenCode, an active AI coding and security engineering assistant built by Leaf Security AI.
+If the user asks you to perform an action (such as creating/writing a file, running a shell command, auditing a codebase, etc.), you MUST output the instructions using one of the following code block formats:
+
+1. To write or create a file:
+```write_file: <relative or absolute path>
+<file contents>
+```
+
+2. To run a terminal command:
+```run_command
+<command line>
+```
+
+Keep your explanations concise. Always use these specific formats for system actions so the Leaf CLI can execute them on your behalf."""
             response = client.call_ai(query, system_prompt)
             
             if HAS_RICH and console:
@@ -1075,6 +1095,70 @@ def opencode(target_dir):
                 print("\nLeaf OpenCode Response:")
                 print(response)
                 print()
+                
+            # Process write_file actions
+            write_matches = write_pattern.findall(response)
+            for path_str, content in write_matches:
+                path_str = path_str.strip()
+                resolved_path = Path(target_dir) / path_str
+                resolved_path = resolved_path.resolve()
+                
+                # Check target directory permission and confirm write
+                if click.confirm(f"🌿 [Leaf OpenCode] Do you want to write file to {resolved_path}?", default=True):
+                    try:
+                        resolved_path.parent.mkdir(parents=True, exist_ok=True)
+                        with open(resolved_path, "w", encoding="utf-8") as wf:
+                            wf.write(content)
+                        if HAS_RICH and console:
+                            success(f"✓ File successfully written to: {resolved_path}")
+                        else:
+                            print(f"File successfully written to: {resolved_path}")
+                    except Exception as ex:
+                        if HAS_RICH and console:
+                            error(f"Failed to write file: {ex}")
+                        else:
+                            print(f"Failed to write file: {ex}")
+                            
+            # Process run_command actions
+            cmd_matches = command_pattern.findall(response)
+            for cmd in cmd_matches:
+                cmd = cmd.strip()
+                if not cmd:
+                    continue
+                if click.confirm(f"🌿 [Leaf OpenCode] Do you want to run command: '{cmd}'?", default=True):
+                    try:
+                        if HAS_RICH and console:
+                            info(f"Running command: {cmd}")
+                        else:
+                            print(f"Running command: {cmd}")
+                            
+                        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=target_dir)
+                        if res.stdout:
+                            console.print(f"[dim]{res.stdout}[/dim]") if HAS_RICH else print(res.stdout)
+                        if res.stderr:
+                            console.print(f"[red]{res.stderr}[/red]") if HAS_RICH else print(res.stderr)
+                            
+                        feedback = f"Command output:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+                        if click.confirm("Send command execution result back to Leaf OpenCode?", default=True):
+                            if HAS_RICH and console:
+                                info("Thinking...")
+                            else:
+                                print("Thinking...")
+                            response = client.call_ai(f"I executed the command: '{cmd}'. Here is the output:\n{feedback}", system_prompt)
+                            if HAS_RICH and console:
+                                console.print("\n[bold green]Leaf OpenCode Response:[/bold green]")
+                                console.print(Markdown(response))
+                                console.print()
+                            else:
+                                print("\nLeaf OpenCode Response:")
+                                print(response)
+                                print()
+                    except Exception as ex:
+                        if HAS_RICH and console:
+                            error(f"Failed to run command: {ex}")
+                        else:
+                            print(f"Failed to run command: {ex}")
+                            
         except KeyboardInterrupt:
             if HAS_RICH and console:
                 console.print()
