@@ -35,12 +35,12 @@ def print_version(ctx, param, value):
 @click.pass_context
 def main(ctx):
     """
-    🌿 LeafScan v2.0 — Authorized Vulnerability Scanner
+    🌿 LeafScan v3.0.0 — Collaborative AI Scanner & Compliance Auditor
 
     \b
     World's First Continuous Bug Bounty Scanner
-    By Leaf Security AI (JJ Groups of Company)
-    Created by A.P.Jovin · MIT License
+    Mapped directly to agentskills.io standard (Anthropic Cybersecurity Skills)
+    By Leaf Security AI (JJ Groups of Company) · Created by A.P.Jovin
 
     \b
     RESPONSIBLE USE:
@@ -51,9 +51,9 @@ def main(ctx):
     QUICK START:
       leafscan setup                         First-run configuration wizard
       leafscan scan https://target.com       Scan a target (requires authorization)
-      leafscan history                       View past scan history
+      leafscan ask what is XSS               Ask questions directly to the AI RAG engine
+      leafscan audit --dir <path>            Run local SAST codebase security audit
       leafscan report list                   List saved reports
-      leafscan update                        Update LeafScan to latest version
     """
     if ctx.invoked_subcommand is None:
         # Check if first run
@@ -835,7 +835,7 @@ def _load_findings_helper(report_name_or_id):
 
 # ── leafscan ask ──────────────────────────────────────────────────────────────
 @main.command("ask")
-@click.argument("question")
+@click.argument("question", nargs=-1)
 def ask(question):
     """
     Ask a question to the configured Leaf Security AI Client.
@@ -848,6 +848,11 @@ def ask(question):
 
     print_banner("Leaf Security AI Assistant")
     
+    question_str = " ".join(question)
+    if not question_str:
+        error("Please provide a question. Example: leafscan ask what is XSS")
+        sys.exit(1)
+
     cfg = load_config()
     # Temporarily enable AI if not configured so the user can test easily
     if not cfg.get("ai", {}).get("enabled"):
@@ -858,7 +863,7 @@ def ask(question):
 
     info("Querying AI Client...")
     client = AIClient(cfg)
-    response = client.call_ai(question, "You are a professional security assistant.")
+    response = client.call_ai(question_str, "You are a professional security assistant.")
     
     if HAS_RICH and console:
         from rich.markdown import Markdown

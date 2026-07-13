@@ -288,7 +288,7 @@ class TestV215Features:
         from click.testing import CliRunner
         from leafscan.cli import ask
         runner = CliRunner()
-        result = runner.invoke(ask, ["What is XSS?"])
+        result = runner.invoke(ask, ["What", "is", "XSS?"])
         assert result.exit_code == 0
         assert "AI Response" in result.output
 
