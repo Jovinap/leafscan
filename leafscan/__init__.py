@@ -8,7 +8,7 @@ GitHub:  https://github.com/Jovinap/leafscan
 License: MIT
 """
 
-__version__     = "2.1.5"
+__version__     = "3.0.0"
 __author__      = "A.P.Jovin"
 __company__     = "JJ Groups of Company"
 __product__     = "Leaf Security AI"

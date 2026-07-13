@@ -80,3 +80,6 @@ Thumbs.db
 .env.local
 .env.production
 secrets.yaml
+
+# Local agents/skills library
+.agents/

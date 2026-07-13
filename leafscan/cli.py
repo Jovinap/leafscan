@@ -604,7 +604,10 @@ def help_cmd():
     print_banner("Command Reference")
 
     if HAS_RICH and console:
-        console.print("""
+        from leafscan import __version__
+        console.print(f"""
+  [bold white]LeafScan CLI v{__version__}[/bold white] — Collaborative AI Security Scanner & SAST Auditor
+  
   [bold green]SCANNING & SAST AUDITS[/bold green]
   [green]leafscan scan <target>[/green]                    Scan a target URL or host
   [green]leafscan scan <target> --min-severity high[/green] Filter report output by severity
@@ -613,9 +616,15 @@ def help_cmd():
   [green]leafscan scan <target> --html-export r.html[/green] Save interactive HTML dashboard report
   [green]leafscan audit --dir <path>[/green]                 Run local SAST codebase security audit
 
-  [bold green]AI CYBERSECURITY SANDBOX[/bold green]
+  [bold green]AI CYBERSECURITY SANDBOX (RAG INTEGRATED)[/bold green]
+  [green]leafscan ask "<question>"[/green]                  Query Leaf Security AI (hybrid offline/online corporate RAG)
   [green]leafscan chain <report_id>[/green]                  Simulate multi-stage exploit chain from scan
   [green]leafscan patch <finding_no> --dir <path>[/green]   Generate Git unified diff patch for finding
+
+  [bold green]COMPLIANCE & RAG DATA[/bold green]
+  * Fully mapped to [bold green]agentskills.io[/bold green] standard (Anthropic Cybersecurity Skills library).
+  * Automatically binds findings to MITRE ATT&CK, NIST CSF 2.0, ATLAS, D3FEND, & MITRE F3.
+  * Local dataset RAG matches from 500MB corporate security corpus (/home/kali/.gemini/antigravity/scratch/leaf-ai-llm/).
 
   [bold green]SCAN MODULES[/bold green]
   ports     · TCP port scanner (common web/admin ports)
@@ -652,7 +661,8 @@ def help_cmd():
   [dim]• See: https://github.com/Jovinap/leafscan/blob/main/RESPONSIBLE_USE.md[/dim]
 """)
     else:
-        print("\n  Run 'leafscan --help' for command reference.\n")
+        from leafscan import __version__
+        print(f"\n  LeafScan CLI v{__version__} — Run 'leafscan --help' for command reference.\n")
 
 
 # ── leafscan chain ─────────────────────────────────────────────────────────────
