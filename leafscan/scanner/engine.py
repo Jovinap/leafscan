@@ -16,7 +16,7 @@ def _load_modules():
     from leafscan.scanner.modules import (
         port_scan, header_scan, tls_scan, dns_scan,
         dir_scan, xss_probe, sqli_probe, cve_patterns,
-        info_disclosure, misconfig,
+        info_disclosure, misconfig, passive_checks,
     )
     return {
         "ports":    ("🔍", port_scan.run),
@@ -29,10 +29,11 @@ def _load_modules():
         "cve":      ("☢️ ", cve_patterns.run),
         "info":     ("📋", info_disclosure.run),
         "misconfig":("⚙️ ", misconfig.run),
+        "passive":  ("🛡️ ", passive_checks.run),
     }
 
 ALL_MODULES = list(_load_modules().keys()) if False else [
-    "ports","headers","tls","dns","dirs","xss","sqli","cve","info","misconfig"
+    "ports","headers","tls","dns","dirs","xss","sqli","cve","info","misconfig","passive"
 ]
 
 # ── Authorization gate ─────────────────────────────────────────────────────────

@@ -80,7 +80,9 @@ def setup():
 @main.command()
 @click.argument("target")
 @click.option("--modules", "-m", default=None,
-              help="Comma-separated list of modules: ports,headers,tls,dns,dirs,xss,sqli,cve,info,misconfig")
+              help="Comma-separated list of modules to run.")
+@click.option("--exclude-modules", default=None,
+              help="Comma-separated list of modules to exclude.")
 @click.option("--profile", "-p", default=None,
               type=click.Choice(["stealth", "default", "aggressive"]),
               help="Scan profile: stealth, default, or aggressive.")
@@ -91,14 +93,29 @@ def setup():
 @click.option("--verbose", "-V", is_flag=True, default=False,
               help="Show verbose/debug output including errors.")
 @click.option("--i-have-permission", "authorized", is_flag=True, default=False,
-              help="Confirm you own or have written authorization to test this target.")
+              help="Confirm authorization to scan target.")
 @click.option("--no-save", is_flag=True, default=False,
               help="Do not save report to disk (print to terminal only).")
 @click.option("--continuous", "-c", is_flag=True, default=False,
               help="Run scan continuously in a loop.")
 @click.option("--submit", "-s", is_flag=True, default=False,
               help="Auto-submit findings to the Leaf Security AI platform.")
-def scan(target, modules, profile, output, json_only, verbose, authorized, no_save, continuous, submit):
+@click.option("--min-severity", default=None,
+              type=click.Choice(["critical", "high", "medium", "low", "info"]),
+              help="Filter findings by minimum severity.")
+@click.option("--header", "custom_headers", multiple=True,
+              help="Custom request headers to inject (format Name:Value).")
+@click.option("--rate-limit", type=int, default=None,
+              help="Limit maximum requests per second.")
+@click.option("--random-agent", is_flag=True, default=False,
+              help="Randomize request User-Agent strings.")
+@click.option("--silent", is_flag=True, default=False,
+              help="Suppress terminal output and output raw JSON findings.")
+@click.option("--csv-export", "csv_path", default=None,
+              help="Path to save CSV report.")
+@click.option("--html-export", "html_path", default=None,
+              help="Path to save HTML report.")
+def scan(target, modules, exclude_modules, profile, output, json_only, verbose, authorized, no_save, continuous, submit, min_severity, custom_headers, rate_limit, random_agent, silent, csv_path, html_path):
     """
     Scan a target for vulnerabilities.
 
@@ -177,6 +194,42 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
             info(f"Valid modules: {', '.join(ALL_MODULES)}")
             sys.exit(1)
 
+    # Exclude modules (Feature 17)
+    if exclude_modules:
+        excluded = [m.strip() for m in exclude_modules.split(",") if m.strip()]
+        active_modules = [m for m in active_modules if m not in excluded]
+
+    # Custom headers injection (Feature 15)
+    if custom_headers:
+        cfg["scan"]["custom_headers"] = {}
+        for h in custom_headers:
+            if ":" in h:
+                k, v = h.split(":", 1)
+                cfg["scan"]["custom_headers"][k.strip()] = v.strip()
+
+    # User-Agent Randomization (Feature 18)
+    if random_agent:
+        import random
+        agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+        ]
+        cfg["scan"]["user_agent"] = random.choice(agents)
+
+    # Rate Limiting (Feature 16)
+    if rate_limit:
+        cfg["scan"]["delay"] = 1.0 / rate_limit
+
+    # Silent mode redirection setup (Feature 21)
+    original_print = print
+    if silent:
+        import unittest.mock
+        import builtins
+        builtins.print = lambda *args, **kwargs: None
+        if HAS_RICH and console:
+            console.print = lambda *args, **kwargs: None
+
     import time
     interval = cfg.get("daemon", {}).get("interval_minutes", 30) * 60
 
@@ -187,7 +240,7 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
                 target,
                 config=cfg,
                 modules=active_modules,
-                authorized=True,  # Bypassed because gate checked above
+                authorized=True,
                 verbose=verbose,
                 live_callback=live_callback,
                 module_callback=module_callback,
@@ -199,6 +252,12 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
                 info("Running AI classification on findings...")
                 findings = [ai_classify_finding(f, cfg) for f in findings]
 
+            # Filter by minimum severity (Feature 14)
+            if min_severity:
+                sev_order = ["info", "low", "medium", "high", "critical"]
+                min_idx = sev_order.index(min_severity.lower())
+                findings = [f for f in findings if sev_order.index(f.get("severity", "info").lower()) >= min_idx]
+
             # Save report
             if not no_save and cfg.get("output", {}).get("save_reports", True):
                 try:
@@ -207,18 +266,32 @@ def scan(target, modules, profile, output, json_only, verbose, authorized, no_sa
                     )
                     save_history_entry(target, report_id, len(findings), cfg["scan"].get("profile", "default"))
 
-                    if HAS_RICH and console:
-                        console.print()
-                        console.print(f"  [bold green]✓ Report saved[/bold green]")
-                        console.print(f"    [dim]Markdown:[/dim] [link={md_path}]{md_path}[/link]")
-                        console.print(f"    [dim]JSON:    [/dim] [link={json_path}]{json_path}[/link]")
-                        console.print(f"    [dim]ID:      [/dim] {report_id}")
-                        console.print()
-                    else:
-                        print(f"\n  ✓ Report: {md_path}")
-                        print(f"  ✓ JSON:   {json_path}")
+                    if not silent:
+                        if HAS_RICH and console:
+                            console.print()
+                            console.print(f"  [bold green]✓ Report saved[/bold green]")
+                            console.print(f"    [dim]Markdown:[/dim] [link={md_path}]{md_path}[/link]")
+                            console.print(f"    [dim]JSON:    [/dim] [link={json_path}]{json_path}[/link]")
+                            console.print(f"    [dim]ID:      [/dim] {report_id}")
+                            console.print()
+                        else:
+                            original_print(f"\n  ✓ Report: {md_path}")
+                            original_print(f"  ✓ JSON:   {json_path}")
                 except Exception as e:
-                    warn(f"Could not save report: {e}")
+                    if not silent:
+                        warn(f"Could not save report: {e}")
+
+            # Exporters (Features 25-26)
+            if csv_path:
+                from leafscan.report.exporters import export_to_csv
+                export_to_csv(findings, csv_path)
+            if html_path:
+                from leafscan.report.exporters import export_to_html
+                export_to_html(target, findings, elapsed, cfg["scan"].get("profile", "default"), html_path)
+
+            if silent:
+                import json
+                original_print(json.dumps(findings, indent=2))
             elif no_save and findings:
                 import json
                 click.echo(json.dumps(findings, indent=2))
@@ -666,6 +739,45 @@ def patch(finding_index_or_id, source_dir, report_id_or_file):
         console.print(result)
     else:
         print(result)
+
+
+# ── leafscan audit ─────────────────────────────────────────────────────────────
+@main.command()
+@click.option("--dir", "source_dir", required=True, help="Local directory path of the codebase to audit.")
+def audit(source_dir):
+    """
+    Perform a local SAST security audit on a codebase directory.
+    
+    Checks for leaked secrets, insecure lockfiles, and container configs.
+    """
+    from leafscan.ui.tui import console, HAS_RICH, print_banner, info, error, success
+    from leafscan.scanner.modules.sast_checks import run_local_sast
+    
+    print_banner("Local Codebase Audit (SAST)")
+    
+    info(f"Scanning directory: {source_dir}")
+    findings = run_local_sast(source_dir)
+    
+    if not findings:
+        success("✓ Clean codebase. No local vulnerabilities or leaked secrets detected.")
+        return
+
+    # Print summary
+    if HAS_RICH and console:
+        from rich.table import Table
+        t = Table(title="SAST Findings Summary", show_header=True, header_style="bold red")
+        t.add_column("Index", style="dim")
+        t.add_column("Title")
+        t.add_column("Severity")
+        t.add_column("File Path")
+        
+        for idx, f in enumerate(findings, 1):
+            sev = f.get("severity", "info").upper()
+            t.add_row(str(idx), f.get("title"), sev, f.get("url"))
+        console.print(t)
+    else:
+        for idx, f in enumerate(findings, 1):
+            print(f"[{idx}] [{f.get('severity').upper()}] {f.get('title')} -> {f.get('url')}")
 
 
 def _load_findings_helper(report_name_or_id):

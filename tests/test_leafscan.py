@@ -213,3 +213,56 @@ class TestV2Upgrades:
         res = generate_git_patch({"title": "Test XSS", "url": "http://localhost/index.php"}, ".", DEFAULT_CONFIG)
         assert "disabled" in res or "⚠️" in res
 
+
+class TestV215Features:
+    def test_passive_checks_run_returns_list(self):
+        from leafscan.scanner.modules import passive_checks
+        from leafscan.core.config import DEFAULT_CONFIG
+        res = passive_checks.run("http://localhost:65535", DEFAULT_CONFIG)
+        assert isinstance(res, list)
+
+    def test_sast_checks_run_returns_list(self):
+        from leafscan.scanner.modules import sast_checks
+        res = sast_checks.run_local_sast(".")
+        assert isinstance(res, list)
+
+    def test_exporters_csv_html(self, tmp_path):
+        from leafscan.report.exporters import export_to_csv, export_to_html
+        findings = [{
+            "title": "Test XSS",
+            "severity": "high",
+            "vuln_type": "XSS",
+            "url": "http://localhost/xss",
+            "description": "Test desc",
+            "remediation": "Test fix",
+            "evidence": "Evidence",
+            "owasp": "A03"
+        }]
+        csv_file = tmp_path / "report.csv"
+        html_file = tmp_path / "report.html"
+        
+        assert export_to_csv(findings, str(csv_file)) is True
+        assert csv_file.exists()
+        
+        assert export_to_html("http://localhost", findings, 1.5, "default", str(html_file)) is True
+        assert html_file.exists()
+
+    def test_json_schema_validation(self):
+        from leafscan.report.exporters import validate_finding_json
+        valid = {
+            "title": "Test XSS",
+            "severity": "high",
+            "vuln_type": "XSS",
+            "url": "http://localhost/xss",
+            "description": "Test desc",
+            "remediation": "Test fix",
+            "evidence": "Evidence"
+        }
+        assert validate_finding_json(valid) is True
+        
+        invalid = {
+            "title": "Missing severity"
+        }
+        assert validate_finding_json(invalid) is False
+
+
