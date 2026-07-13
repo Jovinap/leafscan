@@ -130,29 +130,25 @@ def run(target: str, config: dict) -> list:
                 match = pattern.search(content)
                 if match:
                     raw_match = match.group(0)
-                    if len(raw_match) > 20 and severity == "critical":
-                        shown = raw_match[:8] + "..." + raw_match[-4:]
-                    else:
-                        shown = raw_match[:80]
 
                     findings.append({
-                        "title":       f"Sensitive Data Exposed: {finding_type}",
+                        "title":       f"Sensitive Data Exposed: {finding_type} ({raw_match})",
                         "severity":    severity,
                         "vuln_type":   "Information Disclosure",
                         "url":         source_url,
-                        "description": description,
+                        "description": f"{description} Found exact leaked value: '{raw_match}'",
                         "remediation": (
                             f"Remove all sensitive data from HTTP responses and static JS files. "
                             f"Ensure secrets are never committed to source code or served in client assets. "
                             f"Use environment variables and secrets managers. "
                             f"Review CWE-200: Exposure of Sensitive Information."
                         ),
-                        "evidence":    f"Pattern matched in resource body: '{shown}'",
+                        "evidence":    f"Exact exposed token matched in resource body: '{raw_match}'",
                         "steps":       (
-                            f"1. curl -s '{source_url}' | grep -iE '{finding_type.lower().replace(' ', '|')}'\n"
-                            f"2. Inspect resource code to locate exposed value"
+                            f"1. curl -s '{source_url}' | grep -F '{raw_match}'\n"
+                            f"2. Inspect resource code to locate and rotate the exposed value"
                         ),
-                        "poc":         f"curl -s '{source_url}' | grep -P '{pattern.pattern[:60]}'",
+                        "poc":         f"curl -s '{source_url}' | grep -oE '{pattern.pattern[:60]}'",
                         "impact":      f"Exposure of {finding_type.lower()} may allow unauthorized access to systems or data.",
                     })
     except Exception:
