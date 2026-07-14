@@ -1,14 +1,14 @@
-# Contributing to LeafScan
+# Contributing to Leaf
 
-Thank you for your interest in contributing to LeafScan!
+Thank you for your interest in contributing to Leaf!
 
 ## Adding a Scan Module
 
-Each module lives in `leafscan/scanner/modules/` and must implement a `run(target, config)` function:
+Each module lives in `leaf/scanner/modules/` and must implement a `run(target, config)` function:
 
 ```python
 """
-LeafScan Module — Your Module Name
+Leaf Module — Your Module Name
 Brief description. Reference any public techniques/tools.
 Reference: link to OWASP/RFC/CVE etc.
 """
@@ -33,7 +33,7 @@ def run(target: str, config: dict) -> list:
     return findings
 ```
 
-Then register it in `leafscan/scanner/engine.py` in the `_load_modules()` function.
+Then register it in `leaf/scanner/engine.py` in the `_load_modules()` function.
 
 ## Ethical Guidelines
 

@@ -1,4 +1,4 @@
-# 🌿 LeafScan v2.0
+# 🌿 Leaf v2.0
 
 <div align="center">
 
@@ -15,16 +15,16 @@
 *By [Leaf Security AI](https://leafsecurity.ai) — [JJ Groups of Company](https://jjgroups.com)*  
 *Created by [A.P.Jovin](https://github.com/apjovin)*
 
-[![PyPI version](https://img.shields.io/pypi/v/leafscan?color=green&label=leafscan)](https://pypi.org/project/leafscan/)
+[![PyPI version](https://img.shields.io/pypi/v/leaf?color=green&label=leaf)](https://pypi.org/project/leaf/)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/Jovinap/leafscan)
+[![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/Jovinap/leaf)
 
 </div>
 
 ---
 
-> ⚠️ **AUTHORIZED USE ONLY** — LeafScan is designed for **authorized security testing only**. You must own the target system or have explicit written permission before scanning. Unauthorized scanning is illegal. See [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md).
+> ⚠️ **AUTHORIZED USE ONLY** — Leaf is designed for **authorized security testing only**. You must own the target system or have explicit written permission before scanning. Unauthorized scanning is illegal. See [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md).
 
 ---
 
@@ -33,20 +33,20 @@
 ### One-line installer (recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Jovinap/leafscan/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Jovinap/leaf/main/install.sh | bash
 ```
 
 ### pip install
 
 ```bash
-pip install leafscan
+pip install leaf
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/Jovinap/leafscan.git
-cd leafscan
+git clone https://github.com/Jovinap/leaf.git
+cd leaf
 pip install -e .
 ```
 
@@ -56,24 +56,24 @@ pip install -e .
 
 ```bash
 # 1. First-time setup (configure AI, platform, scan profile)
-leafscan setup
+leaf setup
 
 # 2. Scan your own application (interactive authorization prompt)
-leafscan scan https://your-app.com
+leaf scan https://your-app.com
 
 # 3. Scan with --i-have-permission flag to skip the prompt
-leafscan scan https://your-app.com --i-have-permission
+leaf scan https://your-app.com --i-have-permission
 
 # 4. View the generated report
-leafscan report list
-leafscan report show 1
+leaf report list
+leaf report show 1
 ```
 
 ---
 
 ## 🔍 Scan Modules
 
-LeafScan includes 10 detection modules using **publicly documented, established techniques** — the same methods used by Nmap, Nikto, and OWASP ZAP:
+Leaf includes 10 detection modules using **publicly documented, established techniques** — the same methods used by Nmap, Nikto, and OWASP ZAP:
 
 | Module | Description | Technique |
 |---|---|---|
@@ -91,8 +91,8 @@ LeafScan includes 10 detection modules using **publicly documented, established 
 ### Example — Run specific modules
 
 ```bash
-leafscan scan https://example.com -m headers,tls,ports --i-have-permission
-leafscan scan https://example.com -m xss,sqli -p stealth --i-have-permission
+leaf scan https://example.com -m headers,tls,ports --i-have-permission
+leaf scan https://example.com -m xss,sqli -p stealth --i-have-permission
 ```
 
 ---
@@ -106,7 +106,7 @@ leafscan scan https://example.com -m xss,sqli -p stealth --i-have-permission
 | `aggressive` | 20 | 0.0s | Maximum speed; noisier |
 
 ```bash
-leafscan scan https://example.com -p stealth --i-have-permission
+leaf scan https://example.com -p stealth --i-have-permission
 ```
 
 ---
@@ -114,43 +114,43 @@ leafscan scan https://example.com -p stealth --i-have-permission
 ## 📋 Command Reference
 
 ```
-leafscan scan <target>              Scan a target URL
-leafscan scan <target> -m <mods>   Run specific modules
-leafscan scan <target> -p stealth  Use stealth profile
-leafscan scan <target> --verbose   Verbose output
+leaf scan <target>              Scan a target URL
+leaf scan <target> -m <mods>   Run specific modules
+leaf scan <target> -p stealth  Use stealth profile
+leaf scan <target> --verbose   Verbose output
 
-leafscan setup                     First-run setup wizard
-leafscan history                   View past scan history
-leafscan history -n 50             Show last 50 scans
+leaf setup                     First-run setup wizard
+leaf history                   View past scan history
+leaf history -n 50             Show last 50 scans
 
-leafscan report list               List saved reports
-leafscan report show <id>          Show a report
-leafscan report show 1             Show most recent report
+leaf report list               List saved reports
+leaf report show <id>          Show a report
+leaf report show 1             Show most recent report
 
-leafscan auth login                Log in to Leaf platform
-leafscan auth logout               Log out
-leafscan auth status               Show auth status
+leaf auth login                Log in to Leaf platform
+leaf auth logout               Log out
+leaf auth status               Show auth status
 
-leafscan config show               Show current config
-leafscan config set scan.threads 5 Update a config value
-leafscan config set ai.enabled true Enable AI classification
+leaf config show               Show current config
+leaf config set scan.threads 5 Update a config value
+leaf config set ai.enabled true Enable AI classification
 
-leafscan update                    Update to latest version
-leafscan --version                 Show version
-leafscan help                      Show this reference
+leaf update                    Update to latest version
+leaf --version                 Show version
+leaf help                      Show this reference
 ```
 
 ---
 
 ## 📊 Output Format
 
-LeafScan generates **two report formats** saved to `~/.leafscan/`:
+Leaf generates **two report formats** saved to `~/.leaf/`:
 
-### Markdown Report (`~/.leafscan/reports/`)
+### Markdown Report (`~/.leaf/reports/`)
 Human-readable with executive summary, CVSS scores, evidence, and remediation guidance.
 
 ```markdown
-# LeafScan Security Report
+# Leaf Security Report
 **Report ID:** `LS-20241215-143022`
 **Target:** `https://example.com`
 
@@ -176,7 +176,7 @@ HTTP 200 response — header 'Strict-Transport-Security' absent.
 Add: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 ```
 
-### JSON Report (`~/.leafscan/findings/`)
+### JSON Report (`~/.leaf/findings/`)
 Machine-readable for integration with compliance platforms and bug bounty tools.
 
 ```json
@@ -203,9 +203,9 @@ Machine-readable for integration with compliance platforms and bug bounty tools.
 Connect an AI model to automatically classify findings and generate bug report write-ups:
 
 ```bash
-leafscan config set ai.enabled true
-leafscan config set ai.api_key YOUR_OPENROUTER_KEY
-leafscan config set ai.model openai/gpt-4o-mini
+leaf config set ai.enabled true
+leaf config set ai.api_key YOUR_OPENROUTER_KEY
+leaf config set ai.model openai/gpt-4o-mini
 ```
 
 Supports: **OpenAI, Anthropic Claude, Ollama (local), OpenRouter, any OpenAI-compatible API**.
@@ -214,10 +214,10 @@ Supports: **OpenAI, Anthropic Claude, Ollama (local), OpenRouter, any OpenAI-com
 
 ## 🕒 Scan History
 
-LeafScan maintains a local scan history at `~/.leafscan/scan_history.json`:
+Leaf maintains a local scan history at `~/.leaf/scan_history.json`:
 
 ```bash
-leafscan history
+leaf history
 ```
 
 ```
@@ -240,7 +240,7 @@ leafscan history
 
 ### Interactive authorization gate
 
-Every `leafscan scan` run includes an authorization confirmation:
+Every `leaf scan` run includes an authorization confirmation:
 
 ```
 ⚠  AUTHORIZATION REQUIRED
@@ -258,7 +258,7 @@ Every `leafscan scan` run includes an authorization confirmation:
 Use `--i-have-permission` to skip in automated/CI environments:
 
 ```bash
-leafscan scan https://staging.yourapp.com --i-have-permission
+leaf scan https://staging.yourapp.com --i-have-permission
 ```
 
 ### Laws and regulations
@@ -272,7 +272,7 @@ Unauthorized scanning is illegal under:
 
 ## 🛠 Configuration
 
-Config file: `~/.leafscan/config.toml`
+Config file: `~/.leaf/config.toml`
 
 ```toml
 [platform]
@@ -302,12 +302,12 @@ save_reports  = true
 ## 🏗️ Project Structure
 
 ```
-leafscan/
-├── leafscan/
+leaf/
+├── leaf/
 │   ├── __init__.py         # Version, metadata
 │   ├── cli.py              # CLI entrypoint (click)
 │   ├── core/
-│   │   ├── config.py       # Config management (~/.leafscan/config.toml)
+│   │   ├── config.py       # Config management (~/.leaf/config.toml)
 │   │   ├── auth.py         # Platform API client
 │   │   └── setup_wizard.py # First-run interactive wizard
 │   ├── scanner/
@@ -345,7 +345,7 @@ leafscan/
 - [x] AI-powered finding classification
 - [x] Scan history and tracking
 - [x] Setup wizard with AI provider selection
-- [ ] Continuous monitoring daemon (`leafscan daemon start`)
+- [ ] Continuous monitoring daemon (`leaf daemon start`)
 - [ ] Web dashboard UI
 - [ ] GitHub Actions integration
 - [ ] Slack/Discord webhook notifications
@@ -359,7 +359,7 @@ Contributions are welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-module`
-3. Follow the module template in `leafscan/scanner/modules/`
+3. Follow the module template in `leaf/scanner/modules/`
 4. Ensure all scanning techniques are documented and ethical
 5. Submit a pull request with tests
 
@@ -379,11 +379,11 @@ Copyright (c) 2024 A.P.Jovin, Leaf Security AI, JJ Groups of Company
 
 ## 🙋 About
 
-**LeafScan** is built and maintained by [A.P.Jovin](mailto:apjovin@leafsecurity.ai), CEO of [Leaf Security AI](https://leafsecurity.ai) — a division of **JJ Groups of Company**.
+**Leaf** is built and maintained by [A.P.Jovin](mailto:apjovin@leafsecurity.ai), CEO of [Leaf Security AI](https://leafsecurity.ai) — a division of **JJ Groups of Company**.
 
 - 🌐 Website: [leafsecurity.ai](https://leafsecurity.ai)  
 - 📧 Email: [apjovin@leafsecurity.ai](mailto:apjovin@leafsecurity.ai)  
-- 🐛 Issues: [GitHub Issues](https://github.com/Jovinap/leafscan/issues)  
+- 🐛 Issues: [GitHub Issues](https://github.com/Jovinap/leaf/issues)  
 - 💬 Discord: [Leaf Security Community](https://discord.gg/leafsecurity)
 
 ---

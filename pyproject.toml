@@ -3,7 +3,7 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "leafscan"
+name = "leaf"
 version = "2.1.5"
 description = "World's First Continuous Bug Bounty Scanner — by Leaf Security AI, JJ Groups of Company"
 readme = "README.md"
@@ -44,13 +44,13 @@ dev = ["pytest>=7.0", "black>=23.0", "ruff>=0.1.0"]
 
 [project.urls]
 Homepage = "https://leafsecurity.ai"
-Repository = "https://github.com/Jovinap/leafscan"
-"Bug Tracker" = "https://github.com/Jovinap/leafscan/issues"
-Documentation = "https://github.com/Jovinap/leafscan/wiki"
+Repository = "https://github.com/Jovinap/leaf"
+"Bug Tracker" = "https://github.com/Jovinap/leaf/issues"
+Documentation = "https://github.com/Jovinap/leaf/wiki"
 
 [project.scripts]
-leafscan = "leafscan.cli:main"
+leaf = "leaf.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["leafscan*"]
+include = ["leaf*"]

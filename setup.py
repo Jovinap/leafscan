@@ -1,5 +1,5 @@
 """
-LeafScan — setup.py (legacy compatibility)
+Leaf — setup.py (legacy compatibility)
 Modern build uses pyproject.toml — this file ensures compatibility
 with older pip/setuptools versions.
 """

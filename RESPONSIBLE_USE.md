@@ -1,10 +1,10 @@
-## Responsible Use Policy — LeafScan v2.0
+## Responsible Use Policy — Leaf v2.0
 
 **Leaf Security AI (JJ Groups of Company) · Created by A.P.Jovin**
 
 ---
 
-LeafScan is an authorized vulnerability scanner designed for:
+Leaf is an authorized vulnerability scanner designed for:
 
 - **Authorized penetration testing** on systems you own
 - **Bug bounty** research on in-scope targets with explicit program authorization
@@ -13,13 +13,13 @@ LeafScan is an authorized vulnerability scanner designed for:
 
 ### You MUST have authorization before scanning
 
-LeafScan requires explicit authorization **before every scan**:
+Leaf requires explicit authorization **before every scan**:
 
 1. **System ownership** — You own or directly control the system.
 2. **Written permission** — You have explicit written authorization from the system owner.
 3. **Bug bounty program scope** — The target is within the documented scope of an active bug bounty program.
 
-### What LeafScan does (safe, documented techniques)
+### What Leaf does (safe, documented techniques)
 
 - Checks HTTP response headers for security misconfigurations
 - Probes common TCP ports using TCP connect scanning (same as nmap -sT)
@@ -30,7 +30,7 @@ LeafScan requires explicit authorization **before every scan**:
 - Identifies information disclosure patterns (API keys, stack traces) in responses
 - Probes for reflected XSS by checking if safe marker strings appear unescaped
 
-### What LeafScan does NOT do
+### What Leaf does NOT do
 
 - ❌ Execute exploit payloads or shellcode
 - ❌ Attempt to gain unauthorized access
@@ -53,7 +53,7 @@ Unauthorized computer access is a criminal offense in most jurisdictions:
 
 ### Reporting vulnerabilities responsibly
 
-When you find a vulnerability using LeafScan:
+When you find a vulnerability using Leaf:
 
 1. **Do not exploit further** — Stop at detection, do not exfiltrate data
 2. **Report responsibly** — Use the vendor's security disclosure contact or bug bounty platform
@@ -62,4 +62,4 @@ When you find a vulnerability using LeafScan:
 
 ---
 
-*By using LeafScan, you agree to these terms. For questions: apjovin@leafsecurity.ai*
+*By using Leaf, you agree to these terms. For questions: apjovin@leafsecurity.ai*

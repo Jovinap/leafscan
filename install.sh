@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# LeafScan v2.0 — One-Line Installer
+# Leaf v2.0 — One-Line Installer
 # By Leaf Security AI (JJ Groups of Company) | Created by A.P.Jovin
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/Jovinap/leafscan/main/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/Jovinap/leaf/main/install.sh | bash
 #
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
 
-REPO="Jovinap/leafscan"
+REPO="Jovinap/leaf"
 MIN_PYTHON="3.8"
-PACKAGE="leafscan"
+PACKAGE="leaf"
 
 GREEN='\033[0;32m'
 BOLD='\033[1m'
@@ -32,7 +32,7 @@ banner() {
   ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
 EOF
   echo -e "${RESET}"
-  echo -e "  ${BOLD}LeafScan v2.0${RESET} — World's First Continuous Bug Bounty Scanner"
+  echo -e "  ${BOLD}Leaf v2.0${RESET} — World's First Continuous Bug Bounty Scanner"
   echo -e "  ${DIM}By Leaf Security AI (JJ Groups of Company) · Created by A.P.Jovin${RESET}"
   echo -e "  ${DIM}https://github.com/${REPO}${RESET}"
   echo ""
@@ -49,7 +49,7 @@ banner
 # ── RESPONSIBLE USE NOTICE ─────────────────────────────────────────────────
 echo -e "  ${YELLOW}${BOLD}⚠  RESPONSIBLE USE NOTICE${RESET}"
 echo ""
-echo -e "  LeafScan is for AUTHORIZED security testing only."
+echo -e "  Leaf is for AUTHORIZED security testing only."
 echo -e "  By installing, you agree to:"
 echo -e "    1. Only scan systems you own or have explicit written permission to test."
 echo -e "    2. Comply with all applicable laws (CFAA, Computer Misuse Act, etc.)."
@@ -111,9 +111,9 @@ info "pip: $($PIP --version)"
 # ── CHECK FOR EXISTING INSTALL ────────────────────────────────────────────
 step "Checking for existing installation"
 
-if "$PYTHON" -c "import leafscan" 2>/dev/null; then
-  current_ver=$("$PYTHON" -c "import leafscan; print(leafscan.__version__)" 2>/dev/null || echo "unknown")
-  warn "LeafScan already installed (v${current_ver}). Upgrading..."
+if "$PYTHON" -c "import leaf" 2>/dev/null; then
+  current_ver=$("$PYTHON" -c "import leaf; print(leaf.__version__)" 2>/dev/null || echo "unknown")
+  warn "Leaf already installed (v${current_ver}). Upgrading..."
   UPGRADE_FLAG="--upgrade"
 else
   info "Fresh installation"
@@ -128,46 +128,46 @@ if $PIP install --help 2>/dev/null | grep -q "break-system-packages"; then
 fi
 
 # ── INSTALL ────────────────────────────────────────────────────────────────
-step "Installing LeafScan"
+step "Installing Leaf"
 
-info "Running: pip install ${UPGRADE_FLAG} ${PIP_FLAGS} leafscan"
-if ! $PIP install $UPGRADE_FLAG $PIP_FLAGS leafscan 2>&1; then
+info "Running: pip install ${UPGRADE_FLAG} ${PIP_FLAGS} leaf"
+if ! $PIP install $UPGRADE_FLAG $PIP_FLAGS leaf 2>&1; then
   warn "PyPI install failed — trying install from GitHub..."
   if ! $PIP install $UPGRADE_FLAG $PIP_FLAGS "git+https://github.com/${REPO}.git" 2>&1; then
-    error "Installation failed. Check your internet connection and try: pip install leafscan --break-system-packages"
+    error "Installation failed. Check your internet connection and try: pip install leaf --break-system-packages"
   fi
 fi
 
 # ── VERIFY ─────────────────────────────────────────────────────────────────
 step "Verifying installation"
 
-if command -v leafscan &>/dev/null; then
-  installed_ver=$(leafscan --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  success "LeafScan v${installed_ver} installed successfully!"
+if command -v leaf &>/dev/null; then
+  installed_ver=$(leaf --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  success "Leaf v${installed_ver} installed successfully!"
 else
-  # Try to find leafscan in user bin
+  # Try to find leaf in user bin
   user_bin="$($PYTHON -m site --user-base 2>/dev/null)/bin"
-  if [ -f "$user_bin/leafscan" ]; then
-    warn "leafscan installed to $user_bin — add to PATH:"
+  if [ -f "$user_bin/leaf" ]; then
+    warn "leaf installed to $user_bin — add to PATH:"
     echo ""
     echo "    export PATH=\"\$PATH:$user_bin\""
     echo ""
     echo "  Or add to ~/.bashrc / ~/.zshrc"
   else
-    warn "Installation may have succeeded but 'leafscan' command not in PATH."
-    info "Try: python -m leafscan --version"
+    warn "Installation may have succeeded but 'leaf' command not in PATH."
+    info "Try: python -m leaf --version"
   fi
 fi
 
 # ── FIRST-RUN PROMPT ────────────────────────────────────────────────────────
 echo ""
-echo -e "  ${BOLD}${GREEN}🌿 LeafScan is ready!${RESET}"
+echo -e "  ${BOLD}${GREEN}🌿 Leaf is ready!${RESET}"
 echo ""
 echo -e "  ${BOLD}Next Steps:${RESET}"
-echo -e "  ${GREEN}leafscan setup${RESET}                     Run the setup wizard"
-echo -e "  ${GREEN}leafscan scan https://your-app.com${RESET}  Scan your own application"
-echo -e "  ${GREEN}leafscan help${RESET}                      Full command reference"
-echo -e "  ${GREEN}leafscan --version${RESET}                 Check installed version"
+echo -e "  ${GREEN}leaf setup${RESET}                     Run the setup wizard"
+echo -e "  ${GREEN}leaf scan https://your-app.com${RESET}  Scan your own application"
+echo -e "  ${GREEN}leaf help${RESET}                      Full command reference"
+echo -e "  ${GREEN}leaf --version${RESET}                 Check installed version"
 echo ""
 echo -e "  ${DIM}Docs:   https://github.com/${REPO}/wiki${RESET}"
 echo -e "  ${DIM}Issues: https://github.com/${REPO}/issues${RESET}"
@@ -176,5 +176,5 @@ echo ""
 read -r -p "  Run setup wizard now? [Y/n]: " run_setup < /dev/tty
 if [[ ! "$run_setup" =~ ^[Nn]$ ]]; then
   echo ""
-  leafscan setup < /dev/tty
+  leaf setup < /dev/tty
 fi

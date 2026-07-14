@@ -1,4 +1,4 @@
-name: LeafScan CI
+name: Leaf CI
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
         run: pytest tests/ -v --tb=short
 
       - name: Lint with ruff
-        run: ruff check leafscan/
+        run: ruff check leaf/
 
   build:
     runs-on: ubuntu-latest

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-LeafScan API Example — Programmatic Secrets & Information Disclosure Auditing
+Leaf API Example — Programmatic Secrets & Information Disclosure Auditing
 
-This example demonstrates how to import and run LeafScan's core scanning engine
+This example demonstrates how to import and run Leaf's core scanning engine
 programmatically to analyze targets and local directory trees for leaked tokens.
 """
 
 import os
 import json
-from leafscan.core.config import DEFAULT_CONFIG
-from leafscan.scanner.engine import ScanEngine
-from leafscan.scanner.modules import sast_checks, info_disclosure
+from leaf.core.config import DEFAULT_CONFIG
+from leaf.scanner.engine import ScanEngine
+from leaf.scanner.modules import sast_checks, info_disclosure
 
 def run_local_sast_audit(directory_path: str):
     print(f"[*] Starting local SAST codebase audit on: {directory_path}")
@@ -38,7 +38,7 @@ def run_web_disclosure_scan(target_url: str):
         print(f"     Evidence:   {finding.get('evidence')}\n")
 
 if __name__ == "__main__":
-    # 1. Audit the current leafscan repository directory
+    # 1. Audit the current leaf repository directory
     current_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     run_local_sast_audit(current_dir)
     
