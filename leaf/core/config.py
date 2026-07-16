@@ -64,6 +64,23 @@ SCAN_PROFILES = {
 }
 
 def ensure_dirs():
+    # Automatically migrate old configs from ~/.leafscan to ~/.leaf if needed
+    old_config_dir = Path.home() / ".leafscan"
+    old_config_file = old_config_dir / "config.toml"
+    if old_config_file.exists() and not CONFIG_FILE.exists():
+        try:
+            import shutil
+            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(old_config_file, CONFIG_FILE)
+            old_findings = old_config_dir / "findings"
+            if old_findings.exists():
+                shutil.copytree(old_findings, FINDINGS_DIR, dirs_exist_ok=True)
+            old_reports = old_config_dir / "reports"
+            if old_reports.exists():
+                shutil.copytree(old_reports, REPORTS_DIR, dirs_exist_ok=True)
+        except Exception:
+            pass
+
     for d in [CONFIG_DIR, FINDINGS_DIR, REPORTS_DIR, LOGS_DIR]:
         d.mkdir(parents=True, exist_ok=True)
 
